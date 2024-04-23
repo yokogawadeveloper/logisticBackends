@@ -143,6 +143,16 @@ class DispatchInstructionViewSet(viewsets.ModelViewSet):
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
+    @action(methods=['post'], detail=False, url_path='get_dil_dynamic_filter')
+    def get_dil_dynamic_filter(self, request):
+        try:
+            data = request.data
+            filter_data = DispatchInstruction.objects.filter(**data)
+            serializer = DispatchInstructionSerializer(filter_data, many=True)
+            return Response(serializer.data)
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
 
 class SAPDispatchInstructionViewSet(viewsets.ModelViewSet):
     queryset = DispatchInstruction.objects.all()
@@ -556,8 +566,8 @@ class MasterItemListViewSet(viewsets.ModelViewSet):
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
-    @action(detail=False, methods=['post'], url_path='assign_store_master_item')
-    def assign_store_master_item(self, request, *args, **kwargs):
+    @action(detail=False, methods=['post'], url_path='accept_for_packing')
+    def accept_for_packing(self, request, *args, **kwargs):
         try:
             dil_no = request.data['dil_id']
             dil_status = request.data['dil_status']
@@ -568,8 +578,8 @@ class MasterItemListViewSet(viewsets.ModelViewSet):
                 DAUserRequestAllocation.objects.create(
                     dil_id_id=dil_no,
                     emp_id=request.user.id,
-                    status='Pending',
-                    approver_stage='Packing',
+                    status='pending',
+                    approver_stage='packing_dil',
                 )
                 DAAuthThreads.objects.create(
                     dil_id_id=dil_no,
@@ -579,6 +589,39 @@ class MasterItemListViewSet(viewsets.ModelViewSet):
                     approver='Packing Accept'
                 )
             return Response({'message': 'Store Master Item Assigned', 'status': status.HTTP_201_CREATED})
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+    @action(detail=False, methods=['post'], url_path='assign_to_issuing_item')
+    def assign_to_issuing_item(self, request, *args, **kwargs):
+        try:
+            dil_no = request.data['dil_id']
+            dil_status = request.data['dil_status']
+            dil_status_no = request.data['dil_status_no']
+            remarks = request.data['remarks']
+            stature = request.data['status']
+            assign_to = request.data['assign_to']
+            dil = DispatchInstruction.objects.filter(dil_id=dil_no)
+            if dil.exists():
+                dil.update(dil_status_no=dil_status_no, dil_status=dil_status)
+                # create the allocation for each user
+                for ids in assign_to:
+                    user_instance = User.objects.filter(id=ids).first()
+                    DAUserRequestAllocation.objects.create(
+                        dil_id_id=dil_no,
+                        emp_id=user_instance,
+                        status='pending',
+                        approver_stage='stores_item_issue',
+                    )
+                # create the thread for the user
+                DAAuthThreads.objects.create(
+                    dil_id_id=dil_no,
+                    emp_id=request.user.id,
+                    remarks=remarks,
+                    status=stature,
+                    approver='Stores Accept'
+                )
+            return Response({'message': 'Item Issued & Assign', 'status': status.HTTP_201_CREATED})
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -595,6 +638,25 @@ class MasterItemListViewSet(viewsets.ModelViewSet):
                     packed_quantity=master_item_packed_quantity + item['packed_quantity']
                 )
             return Response({'message': 'Master Item Packed', 'status': status.HTTP_201_CREATED})
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+    @action(detail=False, methods=['post'], url_path='packing_assigment')
+    def packing_assigment(self, request, *args, **kwargs):
+        try:
+            dil_no = request.data['dil_id']
+            assign_to = request.data['assign_to']
+            dil = DispatchInstruction.objects.filter(dil_id=dil_no)
+            if dil.exists():
+                for ids in assign_to:
+                    user_instance = User.objects.filter(id=ids).first()
+                    DAUserRequestAllocation.objects.create(
+                        dil_id_id=dil_no,
+                        emp_id=user_instance,
+                        status='pending',
+                        approver_stage='packing_dil',
+                    )
+            return Response({'message': 'Packing Assigned', 'status': status.HTTP_201_CREATED})
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
