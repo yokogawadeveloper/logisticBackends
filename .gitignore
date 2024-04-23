@@ -1,0 +1,6 @@
+*/venv/
+.idea/
+*/.idea/
+*/.SQL.txt/
+*/.vscode
+/**/.idea/*
