@@ -1,8 +1,7 @@
 from django.core.exceptions import ObjectDoesNotExist
-from django.template.loader import render_to_string
+from rest_framework import permissions, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from rest_framework import permissions, status
 from django.db import transaction
 from rest_framework import viewsets
 from datetime import datetime
@@ -746,6 +745,17 @@ class DAUserRequestAllocationViewSet(viewsets.ModelViewSet):
             serializer = DispatchInstructionSerializer(filter_data, many=True, context={'request': request})
             serializer_data = serializer.data
             return Response(serializer_data)
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+    @action(methods=['post'], detail=False, url_path='dil_on_user_allocation_dynamic_filter')
+    def dil_on_user_allocation_dynamic_filter(self, request):
+        try:
+            data = request.data
+            filter_data = DAUserRequestAllocation.objects.filter(**data).values_list('dil_id_id', flat=True)
+            query_set = DispatchInstruction.objects.filter(dil_id__in=list(filter_data))
+            serializer = DispatchInstructionSerializer(query_set, many=True, context={'request': request})
+            return Response(serializer.data)
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
