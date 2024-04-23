@@ -953,7 +953,7 @@ class DILAuthThreadsViewSet(viewsets.ModelViewSet):
                     dil_id_id=dil_no,
                     emp_id=request.user.id,
                     remarks=remarks,
-                    status=stature,
+                    status='Packing Acknowledged',
                     created_by_id=request.user.id
                 )
             else:
