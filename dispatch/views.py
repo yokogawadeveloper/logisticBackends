@@ -16,6 +16,8 @@ import pandas as pd
 import time
 import os
 
+from .utils import send_email
+
 
 # Create your views here.
 class DispatchInstructionViewSet(viewsets.ModelViewSet):
@@ -180,6 +182,24 @@ class DispatchInstructionViewSet(viewsets.ModelViewSet):
                     return response
             else:
                 raise Exception('Error creating PDF: ' + pdf.err)
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+    @action(methods=['post'], detail=False, url_path='send_mail')
+    def send_mail(self, request, *args, **kwargs):
+        try:
+            dil_id = request.data['dil_id']
+            dil = DispatchInstruction.objects.filter(dil_id=dil_id).first()
+            serializer = DispatchInstructionSerializer(dil)
+            # email sending
+            subject = 'DA Prepared-Re-Export'
+            recipient_list = ['ankul.gautam@yokogawa.com', 'rohit.raj@yokogawa.com']
+            cc = ['YIL.Developer4@yokogawa.com', 'ankul.gautam@yokogawa.com']
+            context = {'data': serializer.data}
+            message = render_to_string("prepare_dil.html", context)
+            send_email(subject, message, recipient_list, cc)
+            if send_email:
+                return Response({'message': 'Mail sent successfully', 'status': status.HTTP_200_OK})
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -576,12 +596,14 @@ class MasterItemListViewSet(viewsets.ModelViewSet):
             remarks = request.data['remarks']
             item_list = request.data['item_list']
             dil = DispatchInstruction.objects.filter(dil_id=dil_no)
-            # da_auth_thread = DAAuthThreads.objects.filter(dil_id=dil_no)
+            if dil is None:
+                return Response({'message': 'DA not found', 'status': status.HTTP_204_NO_CONTENT})
             if dil.exists():
                 if stature == "verified":
                     dil.update(dil_status_no=dil_status_no, dil_status=dil_status)
                     for item in item_list:
-                        MasterItemList.objects.filter(item_id=item['item_id']).update(store_verified=True)
+                        master = MasterItemList.objects.filter(item_id=item['item_id'])
+                        master.update(verified_flag=True, verified_by=request.user.id, verified_at=datetime.now())
                 elif stature == "modified":
                     dil.update(dil_status_no=dil_status_no, dil_status=dil_status)
                 DAAuthThreads.objects.create(
@@ -591,8 +613,7 @@ class MasterItemListViewSet(viewsets.ModelViewSet):
                     status=stature,
                     approver='Verifier'
                 )
-            else:
-                return Response({'message': 'DA not found', 'status': status.HTTP_204_NO_CONTENT})
+                return Response({'message': 'Store Master Item Verified', 'status': status.HTTP_201_CREATED})
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
