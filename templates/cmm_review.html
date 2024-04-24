@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title></title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <style type="text/css">
+        body,
+        table,
+        td,
+        a {
+            -webkit-text-size-adjust: 100%;
+            -ms-text-size-adjust: 100%;
+        }
+
+        table,
+        td {
+            mso-table-lspace: 0pt;
+            mso-table-rspace: 0pt;
+        }
+
+        table {
+            border-collapse: collapse !important;
+        }
+
+        body {
+            height: 100% !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            width: 100% !important;
+        }
+
+
+        a[x-apple-data-detectors] {
+            color: inherit !important;
+            text-decoration: none !important;
+            font-size: inherit !important;
+            font-family: inherit !important;
+            font-weight: inherit !important;
+            line-height: inherit !important;
+        }
+
+        @media screen and (max-width: 480px) {
+            .mobile-hide {
+                display: none !important;
+            }
+
+            .mobile-center {
+                text-align: center !important;
+            }
+        }
+
+        div[style*="margin: 16px 0;"] {
+            margin: 0 !important;
+        }
+        .table-striped{
+        background-color: #ffffff;
+        background: white;
+        }
+    </style>
+
+<body style="margin: 0 !important; padding: 0 !important; background-color: #eeeeee; background-color: white;" bgcolor="#eeeeee">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+        <tr>
+            <td align="center" style="background-color: #eeeeee;" bgcolor="#eeeeee">
+                <table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width:600px;">
+                    <!-- Master Procurement Datas -->
+                    <tr>
+                        <td align="center" style="padding: 35px 35px 20px 35px; background-color: #ffffff;"
+                            bgcolor="#ffffff">
+                            <table align="center" border="0" cellpadding="0" cellspacing="0" width="100%"
+                                style="max-width:600px;">
+                                <tr style="background-color: #2a4399;">
+                                    <td align="center">
+                                        <img src={{data.image}} alt="Yokogawa Logo"
+                                            style="height: 70px; width: 100%;background-color: #2a4399;">
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <table align="center" border="0" cellpadding="0" cellspacing="0" width="100%"
+                                style="max-width:600px;">
+                                <tr>
+                                    <td align="center"
+                                        style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-size: 18px; font-weight: 400; line-height: 18px; padding-top: 1px;">
+                                        <h2
+                                            style="font-size: 18px; font-weight: 800; line-height: 18px; color: #333333; margin: 0;">
+                                            {{data.Heading}}
+                                        </h2>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                    <!-- InlinleItem Datas -->
+
+                    <!-- Approval Links -->
+                    <tr>
+                        <td align="center" style=" padding: 5px;" bgcolor="#ffffff">
+                            <table align="center" border="0" cellpadding="0" cellspacing="0" width="100%"
+                                style="max-width:600px;border:1px solid black;" bgcolor="#eeeeee">
+                                <tr>
+                                    <td align="left">
+                                        <h4
+                                            style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-weight: 400; line-height: 24px;line-height: 30px; color: black; margin: 0;padding-left:5px;">
+                                            Please click the links below to give your approval via email.
+                                        </h4>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td align="left">
+                                        <a href={{data.linkApproveThroughEmail}} target="_blank"
+                                            style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-weight: 400; line-height: 24px; color: #0000FF; text-decoration: none; display: block;padding-left:5px;">
+                                            <u>Click here to approve</u></a>
+                                    </td>
+                                </tr>
+
+                                <tr>
+                                    <td align="left">
+                                        <a href={{data.linkRejectThroughEmail}} target="_blank"
+                                            style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-weight: 400; line-height: 24px; color: #0000FF; text-decoration: none; display: block;padding-left:5px;">
+                                            <u>Click here to reject</u></a>
+                                    </td>
+                                </tr>
+
+                            </table>
+                        </td>
+                    </tr>
+                    <!-- Open Links  -->
+                    <tr>
+                        <td align="center" style=" padding: 5px;" bgcolor="#ffffff">
+                            <table align="center" border="0" cellpadding="0" cellspacing="0" width="100%"
+                                style="max-width:600px;border:1px solid black;" bgcolor="#eeeeee">
+                                <tr>
+                                    <td align="left">
+                                        <h4
+                                            style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-weight: 400; line-height: 24px; line-height: 30px; color: black; margin: 0;padding-left:5px;">
+                                            Please click the link below to view details and approve through the portal.
+                                        </h4>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td align="left">
+                                        <a href={{data.ApprovalThroughPortalLink}} target="_blank"
+                                            style="font-family: Open Sans, Helvetica, Arial, sans-serif; font-weight: 400; line-height: 24px; color: #0000FF; text-decoration: none; display: block;padding-left:5px;">
+                                            <u>Click here to approve</u></a>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+
+</body>
+
+</html>

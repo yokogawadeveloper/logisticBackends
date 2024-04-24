@@ -1,15 +1,20 @@
 from django.core.exceptions import ObjectDoesNotExist
+from django.template.loader import render_to_string
 from rest_framework import permissions, status
+from django.http import HttpResponse
+from django.conf import settings
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from django.db import transaction
 from rest_framework import viewsets
 from datetime import datetime
+from xhtml2pdf import pisa
 from .frames import column_mapping
 from workflow.models import *
 from .serializers import *
 import pandas as pd
 import time
+import os
 
 
 # Create your views here.
@@ -149,6 +154,32 @@ class DispatchInstructionViewSet(viewsets.ModelViewSet):
             filter_data = DispatchInstruction.objects.filter(**data)
             serializer = DispatchInstructionSerializer(filter_data, many=True)
             return Response(serializer.data)
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+    @action(methods=['post'], detail=False, url_path='print_packing_pdf')
+    def print_packing_pdf(self, request, *args, **kwargs):
+        try:
+            dic1 = {'dil_d': 1}
+            # return Response(dic1)
+            context = {'data': dic1}
+            # Render html content through html template
+            html_content = render_to_string('capex.html', context)
+            pdf = pisa.pisaDocument(html_content.encode('utf-8'))
+            if not pdf.err:
+                pdf_file = pdf.dest.getvalue()
+                pdf_filename = 'file.pdf'
+                media_path = settings.MEDIA_ROOT + '/pdf/'
+                pdf_path = os.path.join(media_path, pdf_filename)
+                with open(pdf_path, 'wb') as f:
+                    f.write(pdf_file)
+                    f.close()
+                with open(pdf_path, 'rb') as file:
+                    response = HttpResponse(file.read(), content_type='application/pdf')
+                    response['Content-Disposition'] = 'attachment; filename="file.pdf"'
+                    return response
+            else:
+                raise Exception('Error creating PDF: ' + pdf.err)
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -578,7 +609,8 @@ class MasterItemListViewSet(viewsets.ModelViewSet):
                     dil_id_id=dil_no,
                     emp_id=request.user.id,
                     status='pending',
-                    approver_stage='packing_dil',
+                    approve_status='packing_dil',
+                    approver_stage='packing',
                 )
                 DAAuthThreads.objects.create(
                     dil_id_id=dil_no,
@@ -610,7 +642,8 @@ class MasterItemListViewSet(viewsets.ModelViewSet):
                         dil_id_id=dil_no,
                         emp_id=user_instance,
                         status='pending',
-                        approver_stage='stores_item_issue',
+                        approve_status='stores_item_issue',
+                        approver_stage='item_issue',
                     )
                 # create the thread for the user
                 DAAuthThreads.objects.create(
@@ -653,7 +686,8 @@ class MasterItemListViewSet(viewsets.ModelViewSet):
                         dil_id_id=dil_no,
                         emp_id=user_instance,
                         status='pending',
-                        approver_stage='packing_dil',
+                        approve_status='packing_dil',
+                        approver_stage='packing',
                     )
             return Response({'message': 'Packing Assigned', 'status': status.HTTP_201_CREATED})
         except Exception as e:

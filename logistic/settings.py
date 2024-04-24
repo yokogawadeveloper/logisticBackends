@@ -98,6 +98,17 @@ DATABASES = {
     }
 }
 
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.postgresql',
+#         'NAME': 'NewLogisticDB',
+#         'USER': 'postgres',
+#         'PASSWORD': 'Yil@1234',
+#         'HOST': '10.29.15.142',
+#         'PORT': '5432',
+#     }
+# }
+
 
 # Password validation
 # https://docs.djangoproject.com/en/4.2/ref/settings/#auth-password-validators
