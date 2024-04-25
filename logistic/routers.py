@@ -17,6 +17,7 @@ router.register('dispatch_instruction', DispatchInstructionViewSet, basename='di
 router.register('sap_dispatch_instruction', SAPDispatchInstructionViewSet, basename='sap_dispatch_instruction')
 router.register('dispatch_bill_details', DispatchBillDetailsViewSet, basename='dispatch_bill_details')
 router.register('master_item_list', MasterItemListViewSet, basename='master_item_list')
+router.register('master_item_batch_list', MasterItemBatchViewSet, basename='master_item_batch_list')
 router.register('inline_item_list', InlineItemListViewSet, basename='inline_item_list')
 router.register('file_type', FileTypeViewSet, basename='file_type')
 router.register('multi_file_attachment', MultiFileAttachmentViewSet, basename='multi_file_attachment')

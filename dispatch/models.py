@@ -242,7 +242,7 @@ class MasterItemList(models.Model):
 
 class InlineItemList(models.Model):
     inline_item_id = models.AutoField(primary_key=True)
-    item_list_id = models.ForeignKey(MasterItemList, on_delete=models.CASCADE, null=True, blank=True)
+    master_item = models.ForeignKey(MasterItemList,related_name='inline_items', on_delete=models.CASCADE, null=True, blank=True)
     serial_no = models.CharField(max_length=100, null=True, blank=True)
     tag_no = models.CharField(max_length=100, null=True, blank=True)
     accessory = models.CharField(max_length=100, null=True, blank=True)
@@ -250,6 +250,7 @@ class InlineItemList(models.Model):
     quantity = models.IntegerField(null=True, blank=True)
     status = models.CharField(max_length=100, null=True, blank=True)
     status_no = models.CharField(max_length=100, null=True, blank=True)
+    packed_flag = models.BooleanField(default=False)
     # default fields
     created_by = models.ForeignKey(User, related_name='+', null=True, on_delete=models.CASCADE, blank=True)
     created_at = models.DateTimeField(auto_now_add=True, null=True)

@@ -5,6 +5,7 @@ from .models import *
 # Serializers define the API representation.
 class DispatchInstructionSerializer(serializers.ModelSerializer):
     dil_no = serializers.CharField(max_length=20, required=True)
+    request_by = serializers.CharField(source='request.user.username', read_only=True)
     updated_by = serializers.HiddenField(default=serializers.CurrentUserDefault())
 
     class Meta:
@@ -89,7 +90,17 @@ class InlineItemListSerializer(serializers.ModelSerializer):
         model = InlineItemList
         fields = '__all__'
         read_only_fields = ['created_by', 'created_at', 'updated_by', 'updated_at', 'is_active']
-        depth = 1
+
+
+class MasterItemBatchSerializer(serializers.ModelSerializer):
+    inline_items = InlineItemListSerializer(many=True)
+
+    class Meta:
+        model = MasterItemList
+        fields = ('item_id', 'dil_id', 'material_description', 'material_no', 'ms_code',
+                  's_loc', 'bin', 'plant', 'linkage_no', 'group', 'quantity', 'serial_no',
+                  'match_no', 'tag_no', 'range', 'item_status', 'item_status_no', 'inline_items'
+                  )
 
 
 class DAUserRequestAllocationSerializer(serializers.ModelSerializer):

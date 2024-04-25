@@ -437,6 +437,9 @@ class MasterItemListViewSet(viewsets.ModelViewSet):
     serializer_class = MasterItemListSerializer
     permission_classes = [permissions.IsAuthenticated]
 
+    def get_queryset(self):
+        return MasterItemList.objects.filter(is_active=True)
+
     def list(self, request, *args, **kwargs):
         queryset = MasterItemList.objects.all().filter(is_active=True)
         serializer = self.get_serializer(queryset, many=True)
@@ -684,6 +687,21 @@ class MasterItemListViewSet(viewsets.ModelViewSet):
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 
+class MasterItemBatchViewSet(viewsets.ModelViewSet):
+    queryset = MasterItemList.objects.all()
+    serializer_class = MasterItemBatchSerializer
+
+    # filter based on dil_id
+    def get_queryset(self):
+        dil_id = self.request.query_params.get('dil_id')
+        return MasterItemList.objects.filter(dil_id=dil_id)
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
+
+
 class InlineItemListViewSet(viewsets.ModelViewSet):
     queryset = InlineItemList.objects.all()
     serializer_class = InlineItemListSerializer
@@ -722,6 +740,27 @@ class InlineItemListViewSet(viewsets.ModelViewSet):
         instance.is_active = False
         instance.save()
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+    @action(methods=['post'], detail=False, url_path='create_inline_item')
+    def create_inline_item(self, request, *args, **kwargs):
+        try:
+            payload = request.data
+            with transaction.atomic():
+                for item in payload:
+                    master_items = MasterItemList.objects.filter(linkage_no=item['linkage_no'])
+                    for master_item in master_items:
+                        InlineItemList.objects.create(
+                            master_item=master_item,
+                            serial_no=item['serial_no'],
+                            tag_no=item['tag_no'],
+                            quantity=item['quantity'],
+                            status='pending',
+                            status_no=1,
+                            created_by=request.user
+                        )
+                return Response({'message': 'Inline Items created successfully', 'status': status.HTTP_201_CREATED})
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 
 class DAUserRequestAllocationViewSet(viewsets.ModelViewSet):
@@ -796,97 +835,107 @@ class DILAuthThreadsViewSet(viewsets.ModelViewSet):
 
     def create(self, request, *args, **kwargs):
         try:
+            recipient_list, cc = [], []
             data = request.data.copy()
             user_id = request.user.id
             stature = data['status']
             dil_id = data['dil_id']
-            dil = DispatchInstruction.objects.filter(dil_id=dil_id)
-            if dil.exists():
-                current_level = dil.values('current_level')[0]['current_level']
-                dil_level = dil.values('dil_level')[0]['dil_level']
-                wf_approver = WorkFlowDaApprovers.objects.filter(dil_id_id=dil_id, level=current_level)
-                checking = wf_approver.values('approver')[0]['approver']
-                wf_da_count = wf_approver.count()
-                currentlevel = current_level
+            with transaction.atomic():
+                dil = DispatchInstruction.objects.select_for_update().filter(dil_id=dil_id)
+                if dil.exists():
+                    mail_dil = dil.first()
+                    mail_dil_serializer = DispatchInstructionSerializer(mail_dil)
+                    mail_dil_context = {'data': mail_dil_serializer.data}
+                    cc.append(request.user.email)
+                    cc.extend(['YIL.Developer4@yokogawa.com', 'ankul.gautam@yokogawa.com'])
+                    subject = 'DA Prepared-Re-Export'
+                    message = render_to_string("prepare_dil.html", mail_dil_context)
 
-                if stature == "modification":
-                    dispatch = DispatchInstruction.objects.filter(dil_id=data['da_id'])
-                    dispatch.update(current_level=1, status="modification")
-                    DAUserRequestAllocation.objects.filter(dil_id_id=data['da_id'], approve_status='Approver',
-                                                           approved_date=datetime.now()).delete()
-                    WorkFlowDaApprovers.objects.filter(dil_id_id=data['da_id']).update(status="pending")
+                    current_level = dil.values('current_level')[0]['current_level']
+                    dil_level = dil.values('dil_level')[0]['dil_level']
+                    wf_approver = WorkFlowDaApprovers.objects.filter(dil_id_id=dil_id, level=current_level)
+                    checking = wf_approver.values('approver')[0]['approver']
+                    wf_da_count = wf_approver.count()
 
-                elif stature == "reject":
-                    DispatchInstruction.objects.filter(dil_id=data['da_id']).update(current_level=1, status="rejected")
-                    allocation = DAUserRequestAllocation.objects.filter(dil_id_id=data['da_id'], emp_id=user_id)
-                    allocation.update(status="rejected", approved_date=datetime.now())
+                    if stature == "modification":
+                        dispatch = DispatchInstruction.objects.select_for_update().filter(dil_id=data['da_id'])
+                        dispatch.update(current_level=1, status="modification")
+                        DAUserRequestAllocation.objects.filter(dil_id_id=data['da_id'], approve_status='Approver',
+                                                               approved_date=datetime.now()).delete()
+                        WorkFlowDaApprovers.objects.filter(dil_id_id=data['da_id']).update(status="pending")
 
-                else:
-                    wf_da_status = WorkFlowDaApprovers.objects.filter(emp_id=user_id).values('approver')[0]['approver']
-                    data['approver'] = wf_da_status
-                    # update the allocation table
-                    allocation = DAUserRequestAllocation.objects.filter(dil_id_id=dil_id, emp_id=user_id)
-                    allocation.update(status="approved", approved_date=datetime.now())
-                    DAUserRequestAllocation.objects.filter(dil_id_id=dil_id).update(approver_flag=True)
-                    # if all the approvers are approved then update the status
-                    if dil_level >= current_level:
-                        wf_approver.filter(emp_id=request.user.id).update(status=stature)
-                        if wf_da_count == wf_approver.exclude(parallel=True, status__contains='approved').count():
-                            currentlevel = current_level
-                            current_level = current_level + 1
-                            dil.update(
-                                current_level=current_level,
-                                dil_status=wf_da_status + ' ' + 'approved',
-                                dil_status_no=2
-                            )
-                            # for each level create the allocation
-                            flow_approvers = WorkFlowDaApprovers.objects.filter(
-                                dil_id_id=dil_id,
-                                level=current_level
-                            ).values()
-                            for i in flow_approvers:
-                                DAUserRequestAllocation.objects.create(
-                                    dil_id_id=dil_id,
-                                    emp_id_id=i['emp_id'],
-                                    status="pending",
-                                    approver_stage=i['approver'],
-                                    approver_level=i['level']
+                    elif stature == "reject":
+                        DispatchInstruction.objects.select_for_update().filter(dil_id=data['da_id']).update(
+                            current_level=1,
+                            status="rejected")
+                        allocation = DAUserRequestAllocation.objects.filter(dil_id_id=data['da_id'], emp_id=user_id)
+                        allocation.update(status="rejected", approved_date=datetime.now())
+
+                    else:
+                        wf_da_status = WorkFlowDaApprovers.objects.filter(emp_id=user_id).values('approver')[0][
+                            'approver']
+                        data['approver'] = wf_da_status
+
+                        allocation = DAUserRequestAllocation.objects.filter(dil_id_id=dil_id, emp_id=user_id)
+                        allocation.update(status="approved", approved_date=datetime.now())
+                        DAUserRequestAllocation.objects.filter(dil_id_id=dil_id).update(approver_flag=True)
+
+                        if dil_level >= current_level:
+                            wf_approver.filter(emp_id=request.user.id).update(status=stature)
+
+                            if wf_da_count == wf_approver.exclude(parallel=True, status__contains='approved').count():
+                                current_level += 1
+                                dil.update(
+                                    current_level=current_level,
+                                    dil_status=wf_da_status + ' ' + 'approved',
+                                    dil_status_no=2
                                 )
-                        # if the current level is greater than the dil level then update the dil level
-                        elif wf_da_count == wf_approver.filter(parallel=True, status__contains='approved').count():
-                            currentlevel = current_level
-                            current_level = current_level + 1
-                            dil.update(
-                                current_level=current_level,
-                                status=wf_da_status + ' ' + "approved",
-                                da_status_number=2
-                            )
-                            # for each level create the allocation
-                            flow_approvers = WorkFlowDaApprovers.objects.filter(
-                                dil_id_id=dil_id,
-                                level=current_level
-                            ).values()
-                            for i in flow_approvers:
-                                DAUserRequestAllocation.objects.create(
+                                flow_approvers = WorkFlowDaApprovers.objects.filter(
                                     dil_id_id=dil_id,
-                                    emp_id_id=i['emp_id'],
-                                    status="pending")
-                        # if the current level is greater than the dil level then update the dil level
-                        if dil_level < current_level:
-                            dil.update(approved_flag=True, approved_date=datetime.now(), dil_status_no=3)
+                                    level=current_level
+                                ).values()
+                                for i in flow_approvers:
+                                    DAUserRequestAllocation.objects.create(
+                                        dil_id_id=dil_id,
+                                        emp_id_id=i['emp_id'],
+                                        status="pending",
+                                        approver_stage=i['approver'],
+                                        approver_level=i['level']
+                                    )
+                                    user = User.objects.filter(username=i['emp_id']).first()
+                                    recipient_list.append(user.email)
 
-                # update DispatchInstruction status
-                # if dil_level == currentlevel and status == "approved":
-                #     dil.update(dil_status_no=3)
-                # create the DA Auth Threads by serializing the data
-                serializer = DAAuthThreadsSerializer(data=data, context={'request': request})
-                if serializer.is_valid():
-                    serializer.save()
-                    return Response({'message': 'Auth Threads created successfully', 'status': status.HTTP_201_CREATED})
-            return Response({'message': 'DA not found', 'status': status.HTTP_204_NO_CONTENT})
+                            elif wf_da_count == wf_approver.filter(parallel=True, status__contains='approved').count():
+                                current_level += 1
+                                dil.update(
+                                    current_level=current_level,
+                                    status=wf_da_status + ' ' + "approved",
+                                    da_status_number=2
+                                )
+                                flow_approvers = WorkFlowDaApprovers.objects.filter(
+                                    dil_id_id=dil_id,
+                                    level=current_level
+                                ).values()
+                                for i in flow_approvers:
+                                    DAUserRequestAllocation.objects.create(
+                                        dil_id_id=dil_id,
+                                        emp_id_id=i['emp_id'],
+                                        status="pending"
+                                    )
+                                    user = User.objects.filter(username=i['emp_id']).first()
+                                    recipient_list.append(user.email)
+
+                            if dil_level < current_level:
+                                dil.update(approved_flag=True, approved_date=datetime.now(), dil_status_no=3)
+
+                    serializer = DAAuthThreadsSerializer(data=data, context={'request': request})
+                    if serializer.is_valid():
+                        serializer.save()
+                        send_email(subject, message, recipient_list, cc)  # Send email
+                        return Response({'message': serializer.data, 'status': status.HTTP_201_CREATED})
+                return Response({'message': 'DA not found', 'status': status.HTTP_204_NO_CONTENT})
         except IndexError:
-            return Response({'message': 'Index out of range. Please check the database.'},
-                            status=status.HTTP_400_BAD_REQUEST)
+            return Response({'message': 'Index out of range..'}, status=status.HTTP_400_BAD_REQUEST)
         except ObjectDoesNotExist:
             return Response({'message': 'Object does not exist'}, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
@@ -987,7 +1036,7 @@ class DILAuthThreadsViewSet(viewsets.ModelViewSet):
                     dil_id_id=dil_no,
                     emp_id=request.user.id,
                     remarks=remarks,
-                    status='Packing Acknowledged',
+                    status=dil_status,
                     created_by_id=request.user.id
                 )
             else:
