@@ -145,3 +145,56 @@ class SpecialGSTRate(models.Model):
     class Meta:
         db_table = "SpecialGSTRate"
 
+
+class State(models.Model):
+    name = models.CharField(max_length=100)
+    abbreviation = models.CharField(max_length=2, null=True, blank=True)
+
+    def __str__(self):
+        return self.name
+
+    objects = models.Manager()
+
+    class Meta:
+        db_table = "State"
+
+
+class District(models.Model):
+    name = models.CharField(max_length=100)
+    state = models.ForeignKey(State, on_delete=models.CASCADE)
+
+    def __str__(self):
+        return self.name
+
+    objects = models.Manager()
+
+    class Meta:
+        db_table = "District"
+
+
+class Taluk(models.Model):
+    name = models.CharField(max_length=100)
+    district = models.ForeignKey(District, on_delete=models.CASCADE)
+
+    def __str__(self):
+        return self.name
+
+    objects = models.Manager()
+
+    class Meta:
+        db_table = "Taluk"
+
+
+class Pincode(models.Model):
+    pincode = models.CharField(max_length=6)
+    state = models.ForeignKey(State, on_delete=models.CASCADE)
+    district = models.ForeignKey(District, on_delete=models.CASCADE)
+    taluk = models.ForeignKey(Taluk, on_delete=models.CASCADE)
+
+    def __str__(self):
+        return self.pincode
+
+    objects = models.Manager()
+
+    class Meta:
+        db_table = "Pincode"

@@ -4,7 +4,9 @@ from dispatch.views import *
 from master.views import *
 from packing.views import *
 from subordinate.views import *
+from subordinate.labels import *
 from workflow.views import *
+from tracking.views import *
 
 # Add routers here.
 
@@ -37,6 +39,10 @@ router.register('payment_status', PaymentStatusViewSet, basename='payment_status
 router.register('special_packing', SpecialPackingViewSet, basename='special_packing')
 router.register('export_packing', ExportPackingRequirementViewSet, basename='export_packing')
 router.register('special_gst_rate', SpecialGSTRateViewSet, basename='special_gst_rate')
+router.register('state', StateViewSet, basename='state')
+router.register('district', DistrictViewSet, basename='district')
+router.register('taluk', TalukViewSet, basename='taluk')
+router.register('pincode', PincodeViewSet, basename='pincode')
 # ----------------------------- Packing ------------------------------------------- #
 router.register('box_type', BoxTypeViewSet, basename='box_type')
 router.register('box_size', BoxSizeViewSet, basename='box_size')
@@ -49,3 +55,6 @@ router.register('workflow_employees', WorkFlowEmployeesViewSet, basename='workfl
 router.register('workflow_da_approvers', WorkFlowDaApproversViewSet, basename='workflow_da_approvers')
 router.register('workflow_access', WorkflowAccessViewSet, basename='workflow_access')
 
+# ----------------------------- Tracking ------------------------------------------- #
+router.register('truck_type', TruckTypeViewSet, basename='truck_type')
+router.register('tracking_transportation', TrackingTransportationViewSet, basename='tracking_transportation')

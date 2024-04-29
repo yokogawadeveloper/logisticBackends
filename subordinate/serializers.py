@@ -146,3 +146,31 @@ class SpecialGSTRateSerializer(serializers.ModelSerializer):
     def update(self, instance, validated_data):
         validated_data['updated_by'] = self.context['request'].user
         return super(SpecialGSTRateSerializer, self).update(instance=instance, validated_data=validated_data)
+
+
+class StateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = State
+        fields = '__all__'
+
+
+class DistrictSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = District
+        fields = '__all__'
+
+
+class TalukSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Taluk
+        fields = '__all__'
+
+
+class PincodeSerializer(serializers.ModelSerializer):
+    state = StateSerializer(read_only=True)
+    district = DistrictSerializer(read_only=True)
+    taluk = TalukSerializer(read_only=True)
+
+    class Meta:
+        model = Pincode
+        fields = '__all__'

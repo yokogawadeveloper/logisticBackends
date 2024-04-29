@@ -47,7 +47,8 @@ INSTALLED_APPS = [
     'subordinate.apps.SubordinateConfig',
     'dispatch.apps.DispatchConfig',
     'workflow.apps.WorkflowConfig',
-    'packing.apps.PackingConfig'
+    'packing.apps.PackingConfig',
+    'tracking.apps.TrackingConfig',
 ]
 
 MIDDLEWARE = [
@@ -87,7 +88,7 @@ WSGI_APPLICATION = 'logistic.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'trydb',
+        'NAME': 'LogisticApril',
         'USER': 'postgres',
         'PASSWORD': 'Yil@1234567',
         'HOST': 'localhost',
