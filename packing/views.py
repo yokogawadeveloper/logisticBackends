@@ -6,6 +6,7 @@ from rest_framework import viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from .serializers import *
+from .models import *
 
 
 # Create your views here.
@@ -104,11 +105,13 @@ class BoxDetailViewSet(viewsets.ModelViewSet):
                         data['box_serial_no'] += count[0]['count']
                 # creating BoxDetails
                 dil_id = DispatchInstruction.objects.filter(dil_id=data['dil_id']).first()
+                box_size_id = BoxSize.objects.filter(box_size_id=data['box_size']).first()
+                packing_price = PackingPrice.objects.filter(box_size_id=data['box_size']).first()
+                price = packing_price.price if packing_price else 0
                 create_data = {
                     'main_box': True,
                     'height': data['box_height'],
                     'length': data['box_length'],
-                    'box_size_id': data['box_type'],
                     'breadth': data['box_breadth'],
                     'panel_flag': data['panel_flag'],
                     'box_code': 'box-da_' + str(data['dil_id']) + '-' + str(random_code),
@@ -120,11 +123,12 @@ class BoxDetailViewSet(viewsets.ModelViewSet):
                     'gross_weight': data['gross_weight'],
                     'net_weight': data['net_weight'],
                     'qa_wetness': data['qa_wetness'],
-                    'project_wetness': data['project_wetness']
+                    'project_wetness': data['project_wetness'],
+                    'box_price': price,
                 }
                 serializer = BoxDetailSerializer(data=create_data, context={'request': request})
                 serializer.is_valid(raise_exception=True)
-                serializer.save(created_by=request.user, dil_id=dil_id)
+                serializer.save(created_by=request.user, dil_id=dil_id, box_size=box_size_id)
                 # creating MasterItemList
                 update_list = []
                 dispatch = DispatchInstruction.objects.filter(dil_id=data['dil_id'])
@@ -226,12 +230,14 @@ class ItemPackingViewSet(viewsets.ModelViewSet):
                 data = request.data
                 random_code = random.randint(1000, 9999)
                 # check if the box is main box or not
-                box_type = BoxType.objects.filter(box_type_id=data['box_type']).first()
+                box_size = BoxSize.objects.filter(box_size_id=data['box_size']).first()
                 dil = DispatchInstruction.objects.filter(dil_id=data['dil_id']).first()
+                packing_price = PackingPrice.objects.filter(box_size_id=data['box_size']).first()
+                price = packing_price.price if packing_price else 0
                 if not dil:
                     return Response({'error': 'Invalid dispatch advice number'}, status=status.HTTP_400_BAD_REQUEST)
-                if not box_type:
-                    return Response({'error': 'Invalid box type'}, status=status.HTTP_400_BAD_REQUEST)
+                if not box_size:
+                    return Response({'error': 'Invalid box Size'}, status=status.HTTP_400_BAD_REQUEST)
                 # # check if the box is main box or not
                 if data['main_box'] is True:
                     parent_box = 'box-dil_' + str(data['dil_id']) + '-' + str(random_code)
@@ -263,10 +269,9 @@ class ItemPackingViewSet(viewsets.ModelViewSet):
                 # insert the BoxDetails
                 BoxDetails.objects.create(
                     dil_id=dil,
-                    box_type=box_type,
+                    box_size=box_size,
                     parent_box=parent_box,
                     box_code='box-dil_' + str(data['dil_id']) + '-' + str(random_code),
-                    box_size_id=data['box_type'],
                     height=data['box_height'],
                     status=stature,
                     length=data['box_length'],
@@ -282,6 +287,7 @@ class ItemPackingViewSet(viewsets.ModelViewSet):
                     net_weight=data['net_weight'],
                     qa_wetness=data['qa_wetness'],
                     project_wetness=data['project_wetness'],
+                    box_price=price,
                     created_by=request.user
                 )
                 # update the dispatch advice status
@@ -289,7 +295,7 @@ class ItemPackingViewSet(viewsets.ModelViewSet):
                 dispatch.update(dil_status="packing initiated", dil_status_no=5)
                 # creating multiple Item Packing
                 for obj in data['item_list']:
-                    ItemPacking.objects.create(
+                    item_packing = ItemPacking.objects.create(
                         item_ref_id_id=obj['id'],
                         item_name=obj['item_desc'],
                         item_qty=obj['entered_qty'],
@@ -298,6 +304,19 @@ class ItemPackingViewSet(viewsets.ModelViewSet):
                         remarks=obj['remarks'],
                         created_by_id=request.user.id,
                     )
+                    for inline_items in obj['inline_item_list']:
+                        inline_item = InlineItemList.objects.filter(
+                            inline_item_id=inline_items['inline_item_id']
+                        ).first()
+                        serial_no = inline_items['serial_no']
+                        tag_no = inline_items['tag_no']
+                        ItemPackingInline.objects.create(
+                            item_ref_id_id=inline_item,
+                            item_pack_id=item_packing,
+                            serial_no=serial_no,
+                            tag_no=tag_no,
+                            created_by_id=request.user.id
+                        )
                 # creating MasterItemList
                 update_list = []
                 for obj in data['item_list']:

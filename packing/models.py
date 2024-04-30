@@ -1,5 +1,5 @@
 from django.db import models
-from dispatch.models import DispatchInstruction, MasterItemList
+from dispatch.models import DispatchInstruction, MasterItemList ,InlineItemList
 from django.contrib.auth import get_user_model
 
 User = get_user_model()
@@ -24,7 +24,6 @@ class BoxType(models.Model):
 class BoxSize(models.Model):
     box_size_id = models.AutoField(primary_key=True, unique=True)
     box_type = models.ForeignKey(BoxType, null=True, on_delete=models.CASCADE)
-
     box_size = models.CharField(max_length=500, null=True, blank=True)
     box_description = models.CharField(max_length=500, null=True, blank=True)
     # other fields
@@ -42,7 +41,6 @@ class BoxSize(models.Model):
 class BoxDetails(models.Model):
     box_details_id = models.AutoField(primary_key=True, unique=True)
     dil_id = models.ForeignKey(DispatchInstruction, related_name='dispatch', null=True, on_delete=models.CASCADE)
-    box_type = models.ForeignKey(BoxType, related_name='box_types', null=True, on_delete=models.CASCADE)
     box_size = models.ForeignKey(BoxSize, related_name='box_sizes', null=True, on_delete=models.CASCADE)
     box_code = models.CharField(max_length=300, null=True, blank=True)
     parent_box = models.CharField(max_length=300, null=True, blank=True)
@@ -97,3 +95,44 @@ class ItemPacking(models.Model):
 
     class Meta:
         db_table = "ItemPacking"
+
+
+class ItemPackingInline(models.Model):
+    item_ref_id = models.ForeignKey(InlineItemList, related_name='inline_list', null=True, on_delete=models.CASCADE)
+    item_pack_id = models.ForeignKey(ItemPacking, related_name='item_packing', null=True, on_delete=models.CASCADE)
+    serial_no = models.CharField(max_length=300, null=True, blank=True)
+    tag_no = models.CharField(max_length=300, null=True, blank=True)
+    # Other fields
+    created_by = models.ForeignKey(User, related_name='+', null=True, on_delete=models.CASCADE)
+    created_at = models.DateTimeField(auto_now_add=True, null=True)
+    updated_by = models.ForeignKey(User, related_name='+', null=True, on_delete=models.CASCADE)
+    updated_at = models.DateTimeField(auto_now_add=True, null=True)
+    is_active = models.BooleanField(default=True)
+
+    objects = models.Manager()
+
+    class Meta:
+        db_table = "ItemPackingInline"
+
+
+class PackingPrice(models.Model):
+    box_size_id = models.ForeignKey(BoxSize,  null=True, on_delete=models.CASCADE)
+    location = models.CharField(max_length=300, null=True, blank=True)
+    exports_price = models.FloatField(default=0.00, null=True, blank=True)
+    domestic_price = models.FloatField(default=0.00, null=True, blank=True)
+    price = models.FloatField(default=0.00, null=True, blank=True)
+    valid_from = models.DateField(null=True, blank=True)
+    valid_to = models.DateField(null=True, blank=True)
+    revision_no = models.IntegerField(null=True, blank=True)
+    # Other fields
+    created_by = models.ForeignKey(User, related_name='+', null=True, on_delete=models.CASCADE)
+    created_at = models.DateTimeField(auto_now_add=True, null=True)
+    updated_by = models.ForeignKey(User, related_name='+', null=True, on_delete=models.CASCADE)
+    updated_at = models.DateTimeField(auto_now_add=True, null=True)
+    is_active = models.BooleanField(default=True)
+
+    objects = models.Manager()
+
+    class Meta:
+        db_table = "PackingPrice"
+

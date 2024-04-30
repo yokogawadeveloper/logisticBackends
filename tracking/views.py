@@ -214,12 +214,14 @@ class TruckLoadingDetailsViewSet(viewsets.ModelViewSet):
             with transaction.atomic():
                 data = request.data
                 box_list = data['box_list']
+                dil_id = data['dil_id']
                 truck_list_id = data['truck_list_id']
                 vehicle_no = data['vehicle_no']
                 driver_name = data['driver_name']
                 driver_no = data['driver_no']
                 remarks = data['remarks']
                 truck_list = TruckList.objects.filter(id=truck_list_id)
+                dispatch = DispatchInstruction.objects.filter(dil_id=dil_id)
                 if truck_list.exists():
                     truck_list.update(
                         vehicle_no=vehicle_no,
@@ -233,6 +235,7 @@ class TruckLoadingDetailsViewSet(viewsets.ModelViewSet):
                     for box in box_list:
                         box_code = box['box_code']
                         truck_loading_details_obj = {
+                            'dil_id': dispatch.first(),
                             'truck_list_id': truck_list.first(),
                             'box_code': box_code,
                             'created_by_id': request.user.id,

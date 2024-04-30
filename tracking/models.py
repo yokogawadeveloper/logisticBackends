@@ -1,4 +1,6 @@
+from dispatch.models import DispatchInstruction
 from subordinate.models import *
+
 
 User = get_user_model()
 
@@ -111,6 +113,7 @@ class TruckList(models.Model):
 
 
 class TruckLoadingDetails(models.Model):
+    dil_id = models.ForeignKey(DispatchInstruction, null=True, on_delete=models.CASCADE)
     truck_list_id = models.ForeignKey(TruckList, null=True, on_delete=models.CASCADE)
     box_code = models.CharField(max_length=100, null=True, blank=True)
     created_by = models.ForeignKey(User, related_name='+', null=True, on_delete=models.CASCADE)
