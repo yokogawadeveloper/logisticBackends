@@ -701,6 +701,18 @@ class MasterItemBatchViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data)
 
+    @action(detail=False, methods=['post'], url_path='master_list_based_on_dil')
+    def master_list_based_on_dil(self, request, *args, **kwargs):
+        try:
+            dil_id = request.data['dil_id']
+            master_item_list = MasterItemList.objects.filter(dil_id=dil_id).all()
+            if not master_item_list:
+                return Response({'message': 'Master Item List not found', 'status': status.HTTP_204_NO_CONTENT})
+            serializer = MasterItemBatchSerializer(master_item_list, many=True)
+            return Response(serializer.data)
+        except Exception as e:
+            return Response({'message': str(e), 'status': status.HTTP_400_BAD_REQUEST})
+
 
 class InlineItemListViewSet(viewsets.ModelViewSet):
     queryset = InlineItemList.objects.all()
