@@ -58,3 +58,5 @@ router.register('workflow_access', WorkflowAccessViewSet, basename='workflow_acc
 # ----------------------------- Tracking ------------------------------------------- #
 router.register('truck_type', TruckTypeViewSet, basename='truck_type')
 router.register('tracking_transportation', TrackingTransportationViewSet, basename='tracking_transportation')
+router.register('truck_request', TruckRequestViewSet, basename='truck_request')
+router.register('truck_list', TruckListViewSet, basename='truck_list')

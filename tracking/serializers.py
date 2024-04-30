@@ -13,3 +13,18 @@ class TrackingTransportationSerializer(serializers.ModelSerializer):
     class Meta:
         model = TrackingTransportation
         fields = '__all__'
+
+
+class TruckRequestSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = TruckRequest
+        fields = '__all__'
+
+
+class TruckListSerializer(serializers.ModelSerializer):
+    truck_type = TruckTypeSerializer(read_only=True)
+    transportation = TrackingTransportationSerializer(read_only=True)
+
+    class Meta:
+        model = TruckRequest
+        fields = '__all__'
