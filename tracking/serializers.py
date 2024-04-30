@@ -28,3 +28,9 @@ class TruckListSerializer(serializers.ModelSerializer):
     class Meta:
         model = TruckRequest
         fields = '__all__'
+
+
+class TruckLoadingDetailsSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = TruckLoadingDetails
+        fields = '__all__'

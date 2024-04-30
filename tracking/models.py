@@ -108,3 +108,18 @@ class TruckList(models.Model):
 
     class Meta:
         db_table = 'TruckList'
+
+
+class TruckLoadingDetails(models.Model):
+    truck_list_id = models.ForeignKey(TruckList, null=True, on_delete=models.CASCADE)
+    box_code = models.CharField(max_length=100, null=True, blank=True)
+    created_by = models.ForeignKey(User, related_name='+', null=True, on_delete=models.CASCADE)
+    created_at = models.DateTimeField(auto_now_add=True, null=True)
+    updated_by = models.ForeignKey(User, related_name='+', null=True, on_delete=models.CASCADE)
+    updated_at = models.DateTimeField(auto_now_add=True, null=True)
+    is_active = models.BooleanField(default=True)
+
+    objects = models.Manager()
+
+    class Meta:
+        db_table = 'TruckLoadingDetails'

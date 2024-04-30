@@ -56,6 +56,7 @@ class BoxDetails(models.Model):
     box_serial_no = models.IntegerField(null=True)
     main_dil_no = models.IntegerField(null=True)
     loaded_flag = models.BooleanField(default=False)
+    loaded_date = models.DateTimeField(null=True)
     delivery_flag = models.BooleanField(default=False)
     panel_flag = models.BooleanField(null=True)
     gross_weight = models.IntegerField(null=True)

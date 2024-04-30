@@ -103,13 +103,13 @@ class BoxDetailViewSet(viewsets.ModelViewSet):
                     else:
                         data['box_serial_no'] += count[0]['count']
                 # creating BoxDetails
+                dil_id = DispatchInstruction.objects.filter(dil_id=data['dil_id']).first()
                 create_data = {
                     'main_box': True,
                     'height': data['box_height'],
                     'length': data['box_length'],
                     'box_size_id': data['box_type'],
                     'breadth': data['box_breadth'],
-                    'dil_id_id': data['dil_id'],
                     'panel_flag': data['panel_flag'],
                     'box_code': 'box-da_' + str(data['dil_id']) + '-' + str(random_code),
                     'parent_box': 'box-da_' + str(data['dil_id']) + '-' + str(random_code),
@@ -124,7 +124,7 @@ class BoxDetailViewSet(viewsets.ModelViewSet):
                 }
                 serializer = BoxDetailSerializer(data=create_data, context={'request': request})
                 serializer.is_valid(raise_exception=True)
-                serializer.save(created_by=request.user)
+                serializer.save(created_by=request.user, dil_id=dil_id)
                 # creating MasterItemList
                 update_list = []
                 dispatch = DispatchInstruction.objects.filter(dil_id=data['dil_id'])
