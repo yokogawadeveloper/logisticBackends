@@ -1,7 +1,6 @@
 from dispatch.models import DispatchInstruction
 from subordinate.models import *
 
-
 User = get_user_model()
 
 
@@ -99,6 +98,7 @@ class TruckList(models.Model):
     tracking_flag = models.IntegerField(default=0)
     tracking_date = models.DateTimeField(null=True)
     expected_date = models.DateField(null=True, blank=True)
+    no_of_boxes = models.IntegerField(default=0)
     # other fields
     created_by = models.ForeignKey(User, related_name='UserTable', null=True, on_delete=models.CASCADE)
     created_at = models.DateTimeField(auto_now_add=True, null=True)
@@ -126,3 +126,45 @@ class TruckLoadingDetails(models.Model):
 
     class Meta:
         db_table = 'TruckLoadingDetails'
+
+
+class DeliveryChallan(models.Model):
+    truck_list = models.ForeignKey(TruckList, on_delete=models.CASCADE)
+    e_way_bill_no = models.CharField(max_length=100, null=True)
+    lrn_no = models.CharField(max_length=100, null=True)
+    lrn_date = models.DateField(null=True, blank=True)
+    no_of_boxes = models.IntegerField(default=0)
+    # other fields
+    created_by = models.ForeignKey(User, related_name='+', null=True, on_delete=models.CASCADE)
+    created_at = models.DateTimeField(auto_now_add=True, null=True)
+    updated_by = models.ForeignKey(User, related_name='+', null=True, on_delete=models.CASCADE)
+    updated_at = models.DateTimeField(auto_now_add=True, null=True)
+    is_active = models.BooleanField(default=True)
+
+    objects = models.Manager()
+
+    class Meta:
+        db_table = 'DeliveryChallan'
+
+    def invoice_details(self):
+        return DCInvoiceDetails.objects.filter(delivery_challan=self)
+
+
+class DCInvoiceDetails(models.Model):
+    delivery_challan = models.ForeignKey(DeliveryChallan,related_name='dc_invoice_details', on_delete=models.CASCADE)
+    truck_list = models.ForeignKey(TruckList, on_delete=models.CASCADE)
+    bill_no = models.CharField(max_length=100, null=True)
+    bill_date = models.DateField(null=True, blank=True)
+    bill_type = models.CharField(max_length=100, null=True)
+    bill_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    # other fields
+    created_by = models.ForeignKey(User, related_name='+', null=True, on_delete=models.CASCADE)
+    created_at = models.DateTimeField(auto_now_add=True, null=True)
+    updated_by = models.ForeignKey(User, related_name='+', null=True, on_delete=models.CASCADE)
+    updated_at = models.DateTimeField(auto_now_add=True, null=True)
+    is_active = models.BooleanField(default=True)
+
+    objects = models.Manager()
+
+    class Meta:
+        db_table = 'DCInvoiceDetails'

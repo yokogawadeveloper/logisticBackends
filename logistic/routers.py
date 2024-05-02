@@ -61,3 +61,4 @@ router.register('tracking_transportation', TrackingTransportationViewSet, basena
 router.register('truck_request', TruckRequestViewSet, basename='truck_request')
 router.register('truck_list', TruckListViewSet, basename='truck_list')
 router.register('truck_loading_details', TruckLoadingDetailsViewSet, basename='truck_loading_details')
+router.register('delivery_challan', DeliveryChallanViewSet, basename='delivery_challan')
