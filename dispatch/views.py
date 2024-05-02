@@ -774,6 +774,16 @@ class InlineItemListViewSet(viewsets.ModelViewSet):
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
+    @action(methods=['post'], detail=False, url_path='dynamic_filter_inline_item')
+    def dynamic_filter_inline_item(self, request, *args, **kwargs):
+        try:
+            data = request.data
+            filter_data = InlineItemList.objects.filter(**data)
+            serializer = InlineItemListSerializer(filter_data, many=True)
+            return Response(serializer.data)
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
 
 class DAUserRequestAllocationViewSet(viewsets.ModelViewSet):
     permission_classes = (permissions.IsAuthenticated,)
