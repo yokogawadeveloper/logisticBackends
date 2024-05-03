@@ -296,8 +296,8 @@ class ItemPackingViewSet(viewsets.ModelViewSet):
                 # creating multiple Item Packing
                 for obj in data['item_list']:
                     item_packing = ItemPacking.objects.create(
-                        item_ref_id_id=obj['id'],
-                        item_name=obj['item_desc'],
+                        item_ref_id_id=obj['item_id'],
+                        item_name=obj['material_description'],
                         item_qty=obj['entered_qty'],
                         is_parent=data['main_box'],
                         box_code='box-dil_' + str(data['dil_id']) + '-' + str(random_code),
@@ -305,9 +305,8 @@ class ItemPackingViewSet(viewsets.ModelViewSet):
                         created_by_id=request.user.id,
                     )
                     for inline_items in obj['inline_item_list']:
-                        inline_item = InlineItemList.objects.filter(
-                            inline_item_id=inline_items['inline_item_id']
-                        ).first()
+                        inline_item = InlineItemList.objects.filter(inline_item_id=inline_items['inline_item_id'])
+                        inline_item = inline_item.first()
                         serial_no = inline_items['serial_no']
                         tag_no = inline_items['tag_no']
                         ItemPackingInline.objects.create(
@@ -320,7 +319,7 @@ class ItemPackingViewSet(viewsets.ModelViewSet):
                 # creating MasterItemList
                 update_list = []
                 for obj in data['item_list']:
-                    item_obj = MasterItemList.objects.get(item_id=obj['id'])
+                    item_obj = MasterItemList.objects.get(item_id=obj['item_id'])
                     item_obj.packed_quantity = obj['packed_qty'] + obj['entered_qty']
                     packed_qty = obj['packed_qty'] + obj['entered_qty']
                     if packed_qty == obj['qty'] and data['main_box'] is True:

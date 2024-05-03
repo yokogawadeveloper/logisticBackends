@@ -1,6 +1,7 @@
 from rest_framework import routers
 from accounts.views import *
 from dispatch.views import *
+from dispatch.connections import *
 from master.views import *
 from packing.views import *
 from subordinate.views import *
@@ -25,6 +26,8 @@ router.register('file_type', FileTypeViewSet, basename='file_type')
 router.register('multi_file_attachment', MultiFileAttachmentViewSet, basename='multi_file_attachment')
 router.register('da_user_request_allocation', DAUserRequestAllocationViewSet, basename='da_user_request_allocation')
 router.register('dil_auth_thread', DILAuthThreadsViewSet, basename='dil_auth_thread')
+# from connection
+router.register('connection_dispatch', ConnectionDispatchViewSet, basename='connection_dispatch')
 # ----------------------------- Master ------------------------------------------- #
 router.register('role_master', RoleMasterViewSet, basename='role_master')
 router.register('module_master', ModuleMasterViewSet, basename='module_master')

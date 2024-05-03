@@ -338,6 +338,7 @@ class DeliveryChallanViewSet(viewsets.ModelViewSet):
             else:
                 delivery_challan = DeliveryChallan.objects.filter(**filter_data)
             serializer = DeliveryChallanSerializer(delivery_challan, many=True)
+            # based on list dispatch details
             for data in serializer.data:
                 truck_loading_details = TruckLoadingDetails.objects.filter(truck_list_id=data['truck_list'])
                 truck_loading_details_serializer = TruckLoadingDetailsSerializer(truck_loading_details, many=True)

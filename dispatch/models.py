@@ -197,6 +197,8 @@ class DispatchBillDetails(models.Model):
 class MasterItemList(models.Model):
     item_id = models.AutoField(primary_key=True)
     dil_id = models.ForeignKey(DispatchInstruction, on_delete=models.CASCADE, null=True, blank=True)
+    item_no = models.CharField(max_length=100, null=True, blank=True)
+    so_no = models.CharField(max_length=100, null=True, blank=True)
     material_description = models.CharField(max_length=100, null=True, blank=True)
     material_no = models.CharField(max_length=100, null=True, blank=True)
     ms_code = models.CharField(max_length=100, null=True, blank=True)
@@ -225,6 +227,8 @@ class MasterItemList(models.Model):
     packed_at = models.DateField(auto_now=True, auto_now_add=False)
     packing_flag = models.IntegerField(default=0)
     serial_flag = models.BooleanField(default=False)
+    warranty_flag = models.BooleanField(default=False)
+    warranty_date = models.DateField(blank=True, null=True)
     status = models.CharField(max_length=100, null=True, blank=True)
     status_no = models.CharField(max_length=100, null=True, blank=True)
     # default fields
