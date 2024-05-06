@@ -1,4 +1,3 @@
-import random
 from django.db import transaction
 from django.db.models import Count
 from rest_framework import permissions, status
@@ -7,6 +6,7 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from .serializers import *
 from .models import *
+import random
 
 
 # Create your views here.
@@ -305,7 +305,7 @@ class ItemPackingViewSet(viewsets.ModelViewSet):
                         created_by_id=request.user.id,
                     )
                     for inline_items in obj['inline_items']:
-                        inline_item = InlineItemList.objects.filter(inline_item_id=inline_items['inline_items'])
+                        inline_item = InlineItemList.objects.filter(inline_item_id=inline_items['inline_item_id'])
                         inline_item = inline_item.first()
                         serial_no = inline_items['serial_no']
                         tag_no = inline_items['tag_no']
@@ -322,7 +322,7 @@ class ItemPackingViewSet(viewsets.ModelViewSet):
                     item_obj = MasterItemList.objects.get(item_id=obj['item_id'])
                     item_obj.packed_quantity = obj['packed_qty'] + obj['entered_qty']
                     packed_qty = obj['packed_qty'] + obj['entered_qty']
-                    if packed_qty == obj['qty'] and data['main_box'] is True:
+                    if packed_qty == obj['quantity'] and data['main_box'] is True:
                         item_obj.status = "packed"
                         item_obj.packing_flag = 4
                     else:

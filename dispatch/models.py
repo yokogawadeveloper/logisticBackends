@@ -64,6 +64,7 @@ class DispatchInstruction(models.Model):
     revision_flag = models.BooleanField(default=False)
     revision_count = models.IntegerField(null=True, blank=True)
     remarks = models.TextField(null=True, blank=True, default="")
+    dil_custom_so_flag = models.BooleanField(default=False)
     dil_stage = models.IntegerField(null=True, blank=True, default=0)
     # address
     ship_to_party_no = models.CharField(max_length=100, null=True, blank=True)
@@ -226,6 +227,7 @@ class MasterItemList(models.Model):
     packed_by = models.CharField(max_length=100, null=True, blank=True)
     packed_at = models.DateField(auto_now=True, auto_now_add=False)
     packing_flag = models.IntegerField(default=0)
+    custom_po_flag = models.BooleanField(default=False)
     serial_flag = models.BooleanField(default=False)
     warranty_flag = models.BooleanField(default=False)
     warranty_date = models.DateField(blank=True, null=True)
