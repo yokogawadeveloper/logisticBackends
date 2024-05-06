@@ -305,12 +305,11 @@ class ItemPackingViewSet(viewsets.ModelViewSet):
                         created_by_id=request.user.id,
                     )
                     for inline_items in obj['inline_items']:
-                        inline_item = InlineItemList.objects.filter(inline_item_id=inline_items['inline_item_id'])
-                        inline_item = inline_item.first()
+                        inline_item = InlineItemList.objects.filter(inline_item_id=inline_items['inline_item_id']).first()
                         serial_no = inline_items['serial_no']
                         tag_no = inline_items['tag_no']
                         ItemPackingInline.objects.create(
-                            item_ref_id_id=inline_item,
+                            item_ref_id=inline_item,
                             item_pack_id=item_packing,
                             serial_no=serial_no,
                             tag_no=tag_no,
