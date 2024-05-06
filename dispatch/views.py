@@ -5,6 +5,7 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from django.db import transaction
 from rest_framework import viewsets
+from django.db.models import F
 from datetime import datetime
 from .frames import column_mapping
 from .utils import send_email
@@ -706,6 +707,18 @@ class MasterItemBatchViewSet(viewsets.ModelViewSet):
         try:
             dil_id = request.data['dil_id']
             master_item_list = MasterItemList.objects.filter(dil_id=dil_id).all()
+            if not master_item_list:
+                return Response({'message': 'Master Item List not found', 'status': status.HTTP_204_NO_CONTENT})
+            serializer = MasterItemBatchSerializer(master_item_list, many=True)
+            return Response(serializer.data)
+        except Exception as e:
+            return Response({'message': str(e), 'status': status.HTTP_400_BAD_REQUEST})
+
+    @action(detail=False, methods=['post'], url_path='master_list_on_dil_for_packing')
+    def master_list_on_dil_for_packing(self, request, *args, **kwargs):
+        try:
+            dil_id = request.data['dil_id']
+            master_item_list = MasterItemList.objects.filter(dil_id=dil_id, packed_quantity__lt=F('quantity')).all()
             if not master_item_list:
                 return Response({'message': 'Master Item List not found', 'status': status.HTTP_204_NO_CONTENT})
             serializer = MasterItemBatchSerializer(master_item_list, many=True)

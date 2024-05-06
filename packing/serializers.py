@@ -38,13 +38,20 @@ class BoxSizeSerializer(serializers.ModelSerializer):
 
 
 class BoxDetailSerializer(serializers.ModelSerializer):
-    box_size = BoxSizeSerializer(source='box_size_id', read_only=True)
+    created_by = serializers.HiddenField(default=serializers.CurrentUserDefault())
+    updated_by = serializers.HiddenField(default=serializers.CurrentUserDefault())
 
     class Meta:
         model = BoxDetails
         fields = '__all__'
         read_only_fields = ('created_by', 'updated_by')
-        # depth = 1
+        depth = 1
+
+    def __init__(self, *args, **kwargs):
+        depth = kwargs.get('context', {}).get('depth', 0)
+        super().__init__(*args, **kwargs)
+        if depth <= 1:
+            self.fields.pop('dil_id')
 
     def create(self, validated_data):
         validated_data['created_by'] = self.context['request'].user

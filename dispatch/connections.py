@@ -45,6 +45,7 @@ class ConnectionDispatchViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=['post'], url_path='external_db')
     def external_db(self, request, pk=None):
         so_no = request.data.get('so_no')
+        dil_id = request.data.get('dil_id')
         try:
             server = '10.29.15.169'
             database = 'Logisticks070224'
@@ -55,9 +56,8 @@ class ConnectionDispatchViewSet(viewsets.ModelViewSet):
                 'DRIVER={SQL Server};SERVER=' + server + ';DATABASE=' + database + ';UID=' + username + ';PWD=' + password)
             connection_cursor = connection.cursor()
             # Fetch item numbers based on so_no
-            item_nos_query = MasterItemList.objects.filter(so_no=so_no).values_list('item_no', flat=True)
+            item_nos_query = MasterItemList.objects.filter(dil_id=dil_id).values_list('item_no', flat=True)
             item_nos = list(item_nos_query)
-
             # Construct SQL query with parameters
             query = """
                 WITH MaxSoIdCTE AS (
@@ -95,10 +95,16 @@ class ConnectionDispatchViewSet(viewsets.ModelViewSet):
                     tag_no=item['TagNo'],
                     quantity=1
                 )
-                # update master item list
             # update Master Item List
-            master_lists = MasterItemList.objects.filter(so_no=so_no,quantity=F('serial_no_qty'),serial_flag=False)
-            master_lists.update(serial_flag=True)
+            master_lists = MasterItemList.objects.filter(dil_id=dil_id)
+            master_serial_update = master_lists.filter(quantity=F('serial_no_qty'), serial_flag=False)
+            master_serial_update.update(serial_flag=True)
+            # Dispatch Update
+            master_list_serial_flag_count = master_lists.filter(serial_flag=False).count()
+            if master_list_serial_flag_count == 0:
+                dispatch_instruction = DispatchInstruction.objects.get(id=dil_id)
+                dispatch_instruction.updated_serial_flag = True
+                dispatch_instruction.save()
             connection.commit()
             connection_cursor.close()
             connection.close()

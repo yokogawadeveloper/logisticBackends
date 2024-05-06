@@ -65,6 +65,7 @@ class DispatchInstruction(models.Model):
     revision_count = models.IntegerField(null=True, blank=True)
     remarks = models.TextField(null=True, blank=True, default="")
     dil_custom_so_flag = models.BooleanField(default=False)
+    updated_serial_flag = models.BooleanField(default=False)
     dil_stage = models.IntegerField(null=True, blank=True, default=0)
     # address
     ship_to_party_no = models.CharField(max_length=100, null=True, blank=True)

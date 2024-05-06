@@ -146,6 +146,17 @@ class BoxDetailViewSet(viewsets.ModelViewSet):
             transaction.rollback()
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
+    @action(methods=['post'], detail=False, url_path='filter_packed_box')
+    def filter_queryset(self, request, *args, **kwargs):
+        data = request.data
+        if data['main_box'] == 'ALL':
+            filter_data = self.get_queryset()
+        else:
+            filter_data = self.get_queryset().filter(dil_id=data['dil_id'], main_box=data['main_box'],status=data['status'])
+        serializer = BoxDetailSerializer(filter_data, many=True, context={'request': request})
+        serialize_data = serializer.data
+        return Response({'data': serialize_data})
+
     @action(methods=['post'], detail=False, url_path='filter_packed_box_merged')
     def filter_packed_box_merged(self, request, *args, **kwargs):
         try:
@@ -153,10 +164,10 @@ class BoxDetailViewSet(viewsets.ModelViewSet):
             if data['main_box'] == 'ALL':
                 filter_data = self.get_queryset()
             elif data['status'] == "all":
-                filter_data = self.get_queryset().filter(main_dil_no=data['dil_id'], main_box=data['main_box'])
+                filter_data = self.get_queryset().filter(dil_id=data['dil_id'], main_box=data['main_box'])
             else:
                 filter_data = self.get_queryset().filter(
-                    main_dil_no=data['dil_id'],
+                    dil_id=data['dil_id'],
                     main_box=data['main_box'],
                     status=data['status']
                 )
