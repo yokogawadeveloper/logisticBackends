@@ -2,8 +2,9 @@ from rest_framework import viewsets
 from rest_framework.response import Response
 from rest_framework.decorators import action
 from rest_framework import status
-from .serializers import DispatchInstructionSerializer
-from .models import DispatchInstruction,MasterItemList
+from django.db.models import F
+from .serializers import *
+from .models import *
 import pyodbc
 
 
@@ -49,12 +50,10 @@ class ConnectionDispatchViewSet(viewsets.ModelViewSet):
             database = 'Logisticks070224'
             username = 'sa'
             password = 'Yokogawa@12345'
-
             # Establish connection
             connection = pyodbc.connect(
                 'DRIVER={SQL Server};SERVER=' + server + ';DATABASE=' + database + ';UID=' + username + ';PWD=' + password)
             connection_cursor = connection.cursor()
-
             # Fetch item numbers based on so_no
             item_nos_query = MasterItemList.objects.filter(so_no=so_no).values_list('item_no', flat=True)
             item_nos = list(item_nos_query)
@@ -77,6 +76,30 @@ class ConnectionDispatchViewSet(viewsets.ModelViewSet):
             connection_cursor.execute(query, [so_no] + item_nos)
             results = connection_cursor.fetchall()
             json_results = [dict(zip([column[0] for column in connection_cursor.description], row)) for row in results]
+            for item in json_results:
+                master_item = MasterItemList.objects.filter(item_no=item['ItemNo'], so_no=so_no)
+                previous_serial_no_qty = master_item.first().serial_no_qty
+                master_item.update(
+                    warranty_date=item['WarrantyDate'],
+                    warranty_flag=True,
+                    customer_po_sl_no=item['Customer PO Sl. No'],
+                    customer_po_item_code=item['Customer Part No'],
+                    serial_no_qty=previous_serial_no_qty + 1,
+                    custom_po_flag=True
+                )
+                # Create & Delete new InlineItemList records
+                InlineItemList.objects.filter(master_item=master_item.first()).delete()
+                InlineItemList.objects.create(
+                    master_item=master_item.first(),
+                    serial_no=item['Serialnumber'],
+                    tag_no=item['TagNo'],
+                    quantity=1
+                )
+                # update master item list
+            # update Master Item List
+            master_lists = MasterItemList.objects.filter(so_no=so_no,quantity=F('serial_no_qty'),serial_flag=False)
+            master_lists.update(serial_flag=True)
+            connection.commit()
             connection_cursor.close()
             connection.close()
             return Response(json_results, status=status.HTTP_200_OK)

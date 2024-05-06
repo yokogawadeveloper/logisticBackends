@@ -228,6 +228,7 @@ class MasterItemList(models.Model):
     packed_at = models.DateField(auto_now=True, auto_now_add=False)
     packing_flag = models.IntegerField(default=0)
     custom_po_flag = models.BooleanField(default=False)
+    serial_no_qty = models.IntegerField(null=True, blank=True, default=0)
     serial_flag = models.BooleanField(default=False)
     warranty_flag = models.BooleanField(default=False)
     warranty_date = models.DateField(blank=True, null=True)

@@ -153,7 +153,7 @@ class BoxDetailViewSet(viewsets.ModelViewSet):
             if data['main_box'] == 'ALL':
                 filter_data = self.get_queryset()
             elif data['status'] == "all":
-                filter_data = self.get_queryset().filter(main_dil_no=data['dil_id'], main_box=True)
+                filter_data = self.get_queryset().filter(main_dil_no=data['dil_id'], main_box=data['main_box'])
             else:
                 filter_data = self.get_queryset().filter(
                     main_dil_no=data['dil_id'],
@@ -292,7 +292,7 @@ class ItemPackingViewSet(viewsets.ModelViewSet):
                 )
                 # update the dispatch advice status
                 dispatch = DispatchInstruction.objects.filter(dil_id=data['dil_id'])
-                dispatch.update(dil_status="packing initiated", dil_status_no=5)
+                dispatch.update(dil_status="packing initiated", dil_status_no=10)
                 # creating multiple Item Packing
                 for obj in data['item_list']:
                     item_packing = ItemPacking.objects.create(
@@ -333,7 +333,7 @@ class ItemPackingViewSet(viewsets.ModelViewSet):
                 # update the dispatch advice status
                 master_list = MasterItemList.objects.filter(dil_id=data['dil_id'], packing_flag__lte=3).count()
                 if master_list == 0:
-                    dispatch.update(dil_status="packed", dil_status_no=6)
+                    dispatch.update(dil_status="packed", dil_status_no=11)
                 # return serializer data
                 query_set = self.queryset.latest('item_packing_id')
                 serializer = self.serializer_class(query_set, context={'request': request})
