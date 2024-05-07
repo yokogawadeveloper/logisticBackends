@@ -155,6 +155,16 @@ class DispatchInstructionViewSet(viewsets.ModelViewSet):
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
+    @action(methods=['post'], detail=False, url_path='get_dil_based_status_no')
+    def get_dil_based_status_no(self, request):
+        try:
+            data = request.data.get('dil_status_no')
+            filter_data = DispatchInstruction.objects.filter(dil_status_no__in=data).all()
+            serializer = DispatchInstructionSerializer(filter_data, many=True)
+            return Response(serializer.data,status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
     @action(methods=['post'], detail=False, url_path='send_mail')
     def send_mail(self, request, *args, **kwargs):
         try:
