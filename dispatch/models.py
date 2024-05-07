@@ -196,6 +196,23 @@ class DispatchBillDetails(models.Model):
         db_table = "DispatchBillDetails"
 
 
+class DispatchPODetails(models.Model):
+    so_no = models.CharField(max_length=100, null=True, blank=True)
+    po_no = models.CharField(max_length=100, null=True, blank=True)
+    po_date = models.DateField(auto_now=False, auto_now_add=True)
+    # default fields
+    created_by = models.ForeignKey(User, related_name='+', null=True, on_delete=models.CASCADE, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True, null=True)
+    updated_by = models.ForeignKey(User, related_name='+', null=True, on_delete=models.CASCADE, blank=True)
+    updated_at = models.DateTimeField(auto_now_add=True, null=True)
+    is_active = models.BooleanField(default=True)
+
+    objects = models.Manager()
+
+    class Meta:
+        db_table = "DispatchPODetails"
+
+
 class MasterItemList(models.Model):
     item_id = models.AutoField(primary_key=True)
     dil_id = models.ForeignKey(DispatchInstruction, on_delete=models.CASCADE, null=True, blank=True)
@@ -250,7 +267,8 @@ class MasterItemList(models.Model):
 
 class InlineItemList(models.Model):
     inline_item_id = models.AutoField(primary_key=True)
-    master_item = models.ForeignKey(MasterItemList,related_name='inline_items', on_delete=models.CASCADE, null=True, blank=True)
+    master_item = models.ForeignKey(MasterItemList, related_name='inline_items', on_delete=models.CASCADE, null=True,
+                                    blank=True)
     serial_no = models.CharField(max_length=100, null=True, blank=True)
     tag_no = models.CharField(max_length=100, null=True, blank=True)
     accessory = models.CharField(max_length=100, null=True, blank=True)

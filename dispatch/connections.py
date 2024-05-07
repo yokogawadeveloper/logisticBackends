@@ -1,7 +1,7 @@
 from rest_framework import viewsets
 from rest_framework.response import Response
 from rest_framework.decorators import action
-from rest_framework import status
+from rest_framework import status, permissions
 from django.db.models import F
 from .serializers import *
 from .models import *
@@ -13,6 +13,7 @@ import pyodbc
 class ConnectionDispatchViewSet(viewsets.ModelViewSet):
     queryset = DispatchInstruction.objects.all()
     serializer_class = DispatchInstructionSerializer
+    permission_classes = [permissions.IsAuthenticated]
 
     @action(detail=False, methods=['post'], url_path='dump_dispatch')
     def dump_dispatch(self, request, pk=None):
@@ -27,17 +28,27 @@ class ConnectionDispatchViewSet(viewsets.ModelViewSet):
                 'DRIVER={SQL Server};SERVER=' + server + ';DATABASE=' + database + ';UID=' + username + ';PWD=' + password)
             connection_cursor = connection.cursor()
             # Execute query
-            query = 'SELECT PONO,PODate,PaymentomText,WarrantyPeriod FROM WA_SaleOrderMaster WHERE SoNo = ?'.format(so_no)
-
+            query = 'SELECT PONO, PODate, PaymentomText, WarrantyPeriod FROM WA_SaleOrderMaster WHERE SoNo =' + str(
+                so_no)
             connection_cursor.execute(query)
             results = connection_cursor.fetchall()
             # Format results
             data = [
-                {'PONO': row.PONO,
+                {'SONo': so_no,
+                 'PONO': row.PONO,
                  'PODate': row.PODate,
                  'Payment Terms': row.PaymentomText,
                  'Warranty Period': row.WarrantyPeriod
                  } for row in results]
+            # Insert data into DispatchPODetails
+            for row in data:
+                DispatchPODetails.objects.create(
+                    so_no=row['SONo'],
+                    po_no=row['PONO'],
+                    po_date=row['PODate'],
+                    created_by=request.user,
+                    updated_by=request.user
+                )
             connection_cursor.close()
             connection.close()
             return Response(data, status=status.HTTP_200_OK)
