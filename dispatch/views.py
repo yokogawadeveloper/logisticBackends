@@ -538,7 +538,6 @@ class MasterItemListViewSet(viewsets.ModelViewSet):
                 ms_code = item_data.get("ms_code")
                 linkage_no = item_data.get("linkage_no")
                 quantity = item_data.get("sales_quantity")
-                packed_quantity = item_data.get("packed_quantity")
                 plant = item_data.get("plant")
                 storage_location = item_data.get("s_loc")
                 # Create DispatchBillDetails instance
@@ -549,7 +548,6 @@ class MasterItemListViewSet(viewsets.ModelViewSet):
                     ms_code=ms_code,
                     linkage_no=linkage_no,
                     quantity=quantity,
-                    packed_quantity=packed_quantity,
                     plant=plant,
                     s_loc=storage_location,
                     created_by=request.user
