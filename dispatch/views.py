@@ -162,7 +162,7 @@ class DispatchInstructionViewSet(viewsets.ModelViewSet):
             dil = DispatchInstruction.objects.filter(dil_id=dil_id).first()
             serializer = DispatchInstructionSerializer(dil)
             # email sending
-            subject = 'DA Prepared-Re-Export'
+            subject = 'DA Prepared'
             recipient_list = ['ankul.gautam@yokogawa.com', 'rohit.raj@yokogawa.com']
             cc = ['YIL.Developer4@yokogawa.com', 'ankul.gautam@yokogawa.com']
             context = {'data': serializer.data}
