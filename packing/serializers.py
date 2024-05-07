@@ -62,7 +62,23 @@ class BoxDetailSerializer(serializers.ModelSerializer):
         return super(BoxDetailSerializer, self).update(instance=instance, validated_data=validated_data)
 
 
+class ItemPackingInlineSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ItemPackingInline
+        fields = '__all__'
+        read_only_fields = ('created_by', 'updated_by')
+
+    def create(self, validated_data):
+        validated_data['created_by'] = self.context['request'].user
+        return super(ItemPackingInlineSerializer, self).create(validated_data=validated_data)
+
+    def update(self, instance, validated_data):
+        validated_data['updated_by'] = self.context['request'].user
+        return super(ItemPackingInlineSerializer, self).update(instance=instance, validated_data=validated_data)
+
+
 class ItemPackingSerializer(serializers.ModelSerializer):
+    item_packing_inline = ItemPackingInlineSerializer(many=True)
     created_by = serializers.StringRelatedField()
     updated_by = serializers.StringRelatedField()
 

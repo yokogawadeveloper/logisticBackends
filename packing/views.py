@@ -206,6 +206,17 @@ class BoxDetailViewSet(viewsets.ModelViewSet):
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
+    @action(methods=['post'], detail=False, url_path='box_details_with_child')
+    def box_details_with_child(self, request, *args, **kwargs):
+        try:
+            data = request.data
+            filter_data = self.get_queryset().filter(parent_box=data['box_code'],main_box=False)
+            serializer = BoxDetailSerializer(filter_data, many=True, context={'request': request})
+            serialize_data = serializer.data
+            return Response({'data': serialize_data})
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
 
 class ItemPackingViewSet(viewsets.ModelViewSet):
     queryset = ItemPacking.objects.all()

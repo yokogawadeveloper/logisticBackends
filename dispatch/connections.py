@@ -42,8 +42,8 @@ class ConnectionDispatchViewSet(viewsets.ModelViewSet):
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
-    @action(detail=False, methods=['post'], url_path='external_db')
-    def external_db(self, request, pk=None):
+    @action(detail=False, methods=['post'], url_path='external_dump_master')
+    def external_dump_master(self, request, pk=None):
         so_no = request.data.get('so_no')
         dil_id = request.data.get('dil_id')
         try:
