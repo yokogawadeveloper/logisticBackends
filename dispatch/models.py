@@ -219,7 +219,7 @@ class MasterItemList(models.Model):
     customer_po_item_code = models.CharField(max_length=100, null=True, blank=True)
     item_status = models.CharField(max_length=100, null=True, blank=True)
     item_status_no = models.CharField(max_length=100, null=True, blank=True)
-    packed_quantity = models.IntegerField(null=True, blank=True,default=0)
+    packed_quantity = models.IntegerField(default=0)
     revision_flag = models.BooleanField(default=False)
     revision_count = models.IntegerField(null=True, blank=True, default=0)
     verified_by = models.CharField(max_length=100, null=True, blank=True)
