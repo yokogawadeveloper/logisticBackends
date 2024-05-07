@@ -14,8 +14,9 @@ class ConnectionDispatchViewSet(viewsets.ModelViewSet):
     queryset = DispatchInstruction.objects.all()
     serializer_class = DispatchInstructionSerializer
 
-    @action(detail=False, methods=['get'], url_path='dump_dispatch')
+    @action(detail=False, methods=['post'], url_path='dump_dispatch')
     def dump_dispatch(self, request, pk=None):
+        so_no = request.data.get('so_no')
         try:
             server = '10.29.15.169'
             database = 'Logisticks070224'
@@ -26,7 +27,8 @@ class ConnectionDispatchViewSet(viewsets.ModelViewSet):
                 'DRIVER={SQL Server};SERVER=' + server + ';DATABASE=' + database + ';UID=' + username + ';PWD=' + password)
             connection_cursor = connection.cursor()
             # Execute query
-            query = 'SELECT PONO,PODate,PaymentomText,WarrantyPeriod FROM WA_SaleOrderMaster WHERE SoNo = 2008728126'
+            query = 'SELECT PONO,PODate,PaymentomText,WarrantyPeriod FROM WA_SaleOrderMaster WHERE SoNo = ?'.format(so_no)
+
             connection_cursor.execute(query)
             results = connection_cursor.fetchall()
             # Format results

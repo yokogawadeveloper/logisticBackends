@@ -513,7 +513,6 @@ class MasterItemListViewSet(viewsets.ModelViewSet):
                             # customer_po_item_code=item['customer_po_item_code'],
                             # item_status=item['item_status'],
                             # item_status_no=item['item_status_no'],
-                            packed_quantity=item['do_item_packed_quantity'],
                             created_by=request.user
                         )
                         return Response(
