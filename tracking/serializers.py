@@ -16,6 +16,8 @@ class TrackingTransportationSerializer(serializers.ModelSerializer):
 
 
 class TruckRequestSerializer(serializers.ModelSerializer):
+    transporter = TrackingTransportationSerializer()
+
     class Meta:
         model = TruckRequest
         fields = '__all__'
