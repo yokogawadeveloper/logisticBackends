@@ -78,6 +78,17 @@ class TruckRequestViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         return TruckRequest.objects.filter(is_active=True)
 
+    def list(self, request, *args, **kwargs):
+        queryset = self.filter_queryset(self.get_queryset())
+        serializer = self.get_serializer(queryset, many=True)
+        # Loop through each TruckRequest instance and retrieve related TruckRequestTypesList instances
+        for truck_request in serializer.data:
+            instance = TruckRequest.objects.get(id=truck_request['id'])
+            truck_request_types_list = instance.truckrequesttypeslist_set.all()
+            truck_request_types_list_serializer = TruckRequestTypesListSerializer(truck_request_types_list, many=True)
+            truck_request['truck_request_types_list'] = truck_request_types_list_serializer.data
+        return Response(serializer.data)
+
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         if serializer.is_valid():
@@ -99,14 +110,36 @@ class TruckRequestViewSet(viewsets.ModelViewSet):
         instance.save()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
+    @action(methods=['post'], detail=False, url_path='dynamic_filter_truck_request')
+    def dynamic_filter_truck_request(self, request):
+        try:
+            filter_data = request.data['data_filter']
+            date_flag = request.data['date_flag']
+            date_from = request.data['date_from']
+            date_to = request.data['date_to']
+            if date_flag:
+                truck_request = TruckRequest.objects.filter(created_at__range=[date_from, date_to], **filter_data)
+            else:
+                truck_request = TruckRequest.objects.filter(**filter_data)
+            serializer = TruckRequestSerializer(truck_request, many=True)
+            for truck_request in serializer.data:
+                instance = TruckRequest.objects.get(id=truck_request['id'])
+                truck_request_types_list = instance.truckrequesttypeslist_set.all()
+                truck_request_types_list_serializer = TruckRequestTypesListSerializer(truck_request_types_list,
+                                                                                      many=True)
+                truck_request['truck_request_types_list'] = truck_request_types_list_serializer.data
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
 
 class TruckListViewSet(viewsets.ModelViewSet):
-    queryset = TruckRequest.objects.all()
+    queryset = TruckList.objects.all()
     serializer_class = TruckListSerializer
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
-        return TruckRequest.objects.filter(is_active=True)
+        return TruckList.objects.filter(is_active=True)
 
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
@@ -139,42 +172,53 @@ class TruckListViewSet(viewsets.ModelViewSet):
                 state = State.objects.get(id=data.get('state'))
                 district = District.objects.get(id=data.get('district'))
                 taluk = Taluk.objects.get(id=data.get('taluk'))
-                pincode = Pincode.objects.get(id=data.get('pincode'))
-
-                truck_request_obj = {
-                    'transporter': transportation,
-                    'state': state,
-                    'district': district,
-                    'taluk': taluk,
-                    'pincode': pincode,
-                    'status': data.get('status'),
-                    'remarks': data.get('remarks'),
-                    'created_by_id': request.user.id,
-                    'updated_by_id': request.user.id
-                }
-                truck_request = TruckRequest.objects.create(**truck_request_obj)
-
+                # create truck request
+                truck_request = TruckRequest.objects.create(
+                    transporter=transportation,
+                    state=state,
+                    district=district,
+                    taluk=taluk,
+                    pincode=data.get('pincode'),
+                    status=data.get('status'),
+                    remarks=data.get('remarks'),
+                    created_by=request.user,
+                    updated_by=request.user
+                )
                 for truck_data in truck_list:
-                    truck_request_types_list_obj = {
-                        'truck_request': truck_request,
-                        'transportation': transportation,
-                        'truck_count': 1,
-                    }
-                    truck_request_types_list = TruckRequestTypesList.objects.create(**truck_request_types_list_obj)
-
                     quantity = truck_data.get('quantity')
+                    truck_type = TruckType.objects.get(id=truck_data.get('truck_type'))
+                    # create truck request types list
+                    truck_request_types_list = TruckRequestTypesList.objects.create(
+                        truck_request=truck_request,
+                        truck_type=truck_type,
+                        truck_count=truck_data.get('quantity')
+                    )
                     for i in range(quantity):
-                        truck_type = TruckType.objects.get(id=truck_data.get('truck_type'))
-                        truck_list_obj = {
-                            'truck_type': truck_type,
-                            'transportation': transportation,
-                            'truck_request': truck_request,
-                            'truck_request_types_list': truck_request_types_list,
-                            'created_by_id': request.user.id,
-                            'updated_by_id': request.user.id
-                        }
-                        TruckList.objects.create(**truck_list_obj)
-                return Response({'message': 'Truck list created successfully'}, status=status.HTTP_201_CREATED)
+                        TruckList.objects.create(
+                            truck_type=truck_type,
+                            transportation=transportation,
+                            truck_request=truck_request,
+                            truck_request_types_list=truck_request_types_list,
+                            created_by=request.user,
+                            updated_by=request.user
+                        )
+                return Response({'message': 'Truck list created successfully', 'status': status.HTTP_201_CREATED})
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+    @action(methods=['post'], detail=False, url_path='dynamic_filter_truck_list')
+    def dynamic_filter_truck_list(self, request):
+        try:
+            filter_data = request.data['data_filter']
+            date_flag = request.data['date_flag']
+            date_from = request.data['date_from']
+            date_to = request.data['date_to']
+            if date_flag:
+                truck_list = TruckList.objects.filter(created_at__range=[date_from, date_to], **filter_data)
+            else:
+                truck_list = TruckList.objects.filter(**filter_data)
+            serializer = TruckListSerializer(truck_list, many=True)
+            return Response(serializer.data, status=status.HTTP_200_OK)
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 

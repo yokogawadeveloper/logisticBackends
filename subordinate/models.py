@@ -148,7 +148,6 @@ class SpecialGSTRate(models.Model):
 
 class State(models.Model):
     name = models.CharField(max_length=100)
-    abbreviation = models.CharField(max_length=2, null=True, blank=True)
 
     def __str__(self):
         return self.name

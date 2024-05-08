@@ -21,13 +21,20 @@ class TruckRequestSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
+class TruckRequestTypesListSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = TruckRequestTypesList
+        fields = '__all__'
+
+
 class TruckListSerializer(serializers.ModelSerializer):
-    truck_type = TruckTypeSerializer(read_only=True)
-    transportation = TrackingTransportationSerializer(read_only=True)
+    created_by = serializers.HiddenField(default=serializers.CurrentUserDefault())
+    updated_by = serializers.HiddenField(default=serializers.CurrentUserDefault())
 
     class Meta:
-        model = TruckRequest
+        model = TruckList
         fields = '__all__'
+        depth = 1
 
 
 class TruckLoadingDetailsSerializer(serializers.ModelSerializer):

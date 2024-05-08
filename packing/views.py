@@ -132,7 +132,7 @@ class BoxDetailViewSet(viewsets.ModelViewSet):
                 # creating MasterItemList
                 update_list = []
                 dispatch = DispatchInstruction.objects.filter(dil_id=data['dil_id'])
-                dispatch.update(dil_status="packing initiated", dil_status_no=5)
+                dispatch.update(dil_status="packing initiated", dil_status_no=10)
                 # previous data
                 for index, obj in enumerate(data['box_list']):
                     model_obj = BoxDetails.objects.get(box_details_id=obj['box_details_id'])

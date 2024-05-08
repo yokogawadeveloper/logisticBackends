@@ -42,7 +42,7 @@ class TruckRequest(models.Model):
     state = models.ForeignKey(State, on_delete=models.CASCADE)
     district = models.ForeignKey(District, on_delete=models.CASCADE)
     taluk = models.ForeignKey(Taluk, on_delete=models.CASCADE)
-    pincode = models.ForeignKey(Pincode, on_delete=models.CASCADE)
+    pincode = models.IntegerField()
     status = models.CharField(max_length=100, null=True)
     remarks = models.TextField(null=True)
     # other fields
@@ -60,7 +60,7 @@ class TruckRequest(models.Model):
 
 class TruckRequestTypesList(models.Model):
     truck_request = models.ForeignKey(TruckRequest, on_delete=models.CASCADE)
-    transportation = models.ForeignKey(TrackingTransportation, null=True, on_delete=models.CASCADE)
+    truck_type = models.ForeignKey(TruckType, related_name='truck_request_type_list', on_delete=models.CASCADE)
     truck_count = models.IntegerField(default=0)
     # other fields
     created_by = models.ForeignKey(User, related_name='+', null=True, on_delete=models.CASCADE)
