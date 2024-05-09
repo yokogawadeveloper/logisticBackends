@@ -152,7 +152,8 @@ class BoxDetailViewSet(viewsets.ModelViewSet):
         if data['main_box'] == 'ALL':
             filter_data = self.get_queryset()
         else:
-            filter_data = self.get_queryset().filter(dil_id=data['dil_id'], main_box=data['main_box'],status=data['status'])
+            filter_data = self.get_queryset().filter(dil_id=data['dil_id'], main_box=data['main_box'],
+                                                     status=data['status'])
         serializer = BoxDetailSerializer(filter_data, many=True, context={'request': request})
         serialize_data = serializer.data
         return Response({'data': serialize_data})
@@ -210,7 +211,19 @@ class BoxDetailViewSet(viewsets.ModelViewSet):
     def box_details_with_child(self, request, *args, **kwargs):
         try:
             data = request.data
-            filter_data = self.get_queryset().filter(parent_box=data['box_code'],main_box=False)
+            filter_data = self.get_queryset().filter(parent_box=data['box_code'], main_box=False)
+            serializer = BoxDetailSerializer(filter_data, many=True, context={'request': request})
+            serialize_data = serializer.data
+            return Response({'data': serialize_data})
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+    @action(methods=['post'], detail=False, url_path='box_details_for_loading')
+    def box_details_for_loading(self, request, *args, **kwargs):
+        try:
+            data = request.data
+            filter_data = self.get_queryset().filter(dil_id=data['dil_id'], main_box=True, loaded_flag=False,
+                                                     status='packed')
             serializer = BoxDetailSerializer(filter_data, many=True, context={'request': request})
             serialize_data = serializer.data
             return Response({'data': serialize_data})
@@ -327,7 +340,8 @@ class ItemPackingViewSet(viewsets.ModelViewSet):
                         created_by_id=request.user.id,
                     )
                     for inline_items in obj['inline_items']:
-                        inline_item = InlineItemList.objects.filter(inline_item_id=inline_items['inline_item_id']).first()
+                        inline_item = InlineItemList.objects.filter(
+                            inline_item_id=inline_items['inline_item_id']).first()
                         serial_no = inline_items['serial_no']
                         tag_no = inline_items['tag_no']
                         ItemPackingInline.objects.create(
