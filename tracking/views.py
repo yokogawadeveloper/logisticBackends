@@ -274,7 +274,9 @@ class TruckLoadingDetailsViewSet(viewsets.ModelViewSet):
                         loading_remarks=remarks,
                         loaded_flag=True,
                         loaded_date=datetime.datetime.now(),
-                        tracking_status=1,
+                        tracking_status=2,
+                        status='Loaded',
+                        no_of_boxes=len(box_list)
                     )
                     for box in box_list:
                         box_code = box['box_code']
@@ -338,11 +340,12 @@ class DeliveryChallanViewSet(viewsets.ModelViewSet):
             data = request.data
             truck_list_id = data.get('truck_list')
             dc_invoice_details = data.get('dc_inv_details')
-            truck_list = TruckList.objects.filter(id=truck_list_id).first()
-            no_of_boxes = truck_list.no_of_boxes
+            truck_list = TruckList.objects.filter(id=truck_list_id)
+            truck_loading_details = TruckLoadingDetails.objects.filter(truck_list_id=truck_list_id)
+            no_of_boxes = truck_list.first().no_of_boxes
             if truck_list is not None:
                 delivery_challan = DeliveryChallan.objects.create(
-                    truck_list=truck_list,
+                    truck_list=truck_list.first(),
                     e_way_bill_no=data.get('e_way_bill_no'),
                     lrn_no=data.get('lrn_no'),
                     lrn_date=data.get('lrn_date'),
@@ -353,7 +356,7 @@ class DeliveryChallanViewSet(viewsets.ModelViewSet):
                 for dc_inv in dc_invoice_details:
                     DCInvoiceDetails.objects.create(
                         delivery_challan=delivery_challan,
-                        truck_list=truck_list,
+                        truck_list=truck_list.first(),
                         bill_no=dc_inv.get('bill_no'),
                         bill_date=dc_inv.get('bill_date'),
                         bill_type=dc_inv.get('bill_type'),
@@ -362,6 +365,11 @@ class DeliveryChallanViewSet(viewsets.ModelViewSet):
                         updated_by=request.user
                     )
                 serializer = DeliveryChallanSerializer(delivery_challan)
+                # Update truck list status & Dispatch status
+                truck_list.update(status='DC Created', tracking_status=3)
+                dil_ids = truck_loading_details.values_list('dil_id', flat=True).distinct()
+                dispatch = DispatchInstruction.objects.filter(dil_id__in=dil_ids)
+                dispatch.filter(dil_status_no=14).update(dil_status_no=15)
                 return Response(serializer.data, status=status.HTTP_201_CREATED)
             else:
                 return Response({'error': 'Truck list not found'}, status=status.HTTP_400_BAD_REQUEST)

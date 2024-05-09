@@ -583,7 +583,7 @@ class MasterItemListViewSet(viewsets.ModelViewSet):
                     dil.update(dil_status_no=dil_status_no, dil_status=dil_status)
                     for item in item_list:
                         master = MasterItemList.objects.filter(item_id=item['item_id'])
-                        master.update(verified_flag=True, verified_by=request.user.id, verified_at=datetime.now())
+                        master.update(verified_flag=True, verified_by=request.user.id, verified_at=datetime.now(),status_no=2)
                 elif stature == "modified":
                     dil.update(dil_status_no=dil_status_no, dil_status=dil_status)
                 DAAuthThreads.objects.create(

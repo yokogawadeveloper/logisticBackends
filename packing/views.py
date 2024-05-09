@@ -357,19 +357,20 @@ class ItemPackingViewSet(viewsets.ModelViewSet):
                     item_obj = MasterItemList.objects.get(item_id=obj['item_id'])
                     item_obj.packed_quantity = obj['packed_qty'] + obj['entered_qty']
                     packed_qty = obj['packed_qty'] + obj['entered_qty']
-                    if packed_qty == obj['quantity'] and data['main_box'] is True:
+                    if packed_qty == obj['quantity']:
                         item_obj.status = "packed"
                         item_obj.packing_flag = 4
-                    else:
-                        item_obj.status = item_obj.status
-                        item_obj.packing_flag = 3
+                        item_obj.status_no = 5
+                    # else:
+                    #     item_obj.status = item_obj.status
+                    #     item_obj.packing_flag = 3
                     # appending latest records
                     update_list.append(item_obj)
-                MasterItemList.objects.bulk_update(update_list, ['packed_quantity', 'status', 'packing_flag'])
+                MasterItemList.objects.bulk_update(update_list, ['packed_quantity', 'status', 'packing_flag', 'status_no'])
                 # update the dispatch advice status
-                master_list = MasterItemList.objects.filter(dil_id=data['dil_id'], packing_flag__lte=3).count()
+                master_list = MasterItemList.objects.filter(dil_id=data['dil_id'], status_no__lte=4).count()
                 if master_list == 0:
-                    dispatch.update(dil_status="packed", dil_status_no=11)
+                    dispatch.update(dil_status="Packed ,Ready For Load ", dil_status_no=11)
                 # return serializer data
                 query_set = self.queryset.latest('item_packing_id')
                 serializer = self.serializer_class(query_set, context={'request': request})

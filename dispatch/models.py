@@ -251,12 +251,12 @@ class MasterItemList(models.Model):
     warranty_flag = models.BooleanField(default=False)
     warranty_date = models.DateField(blank=True, null=True)
     status = models.CharField(max_length=100, null=True, blank=True)
-    status_no = models.CharField(max_length=100, null=True, blank=True)
+    status_no = models.IntegerField(default=0)
     # default fields
     created_by = models.ForeignKey(User, related_name='+', null=True, on_delete=models.CASCADE, blank=True)
     created_at = models.DateTimeField(auto_now_add=True, null=True)
     updated_by = models.ForeignKey(User, related_name='+', null=True, on_delete=models.CASCADE, blank=True)
-    updated_at = models.DateTimeField(auto_now_add=True, null=True)
+    updated_at = models.DateTimeField(auto_now=True, null=True)
     is_active = models.BooleanField(default=True)
 
     objects = models.Manager()
