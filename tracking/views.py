@@ -206,6 +206,55 @@ class TruckListViewSet(viewsets.ModelViewSet):
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
+    @action(methods=['post'], detail=False, url_path='update_truck_list')
+    def update_truck_list(self, request):
+        try:
+            with transaction.atomic():
+                data = request.data
+                truck_request_id = data.get('id')
+                transporter_id = data.get('transporter')
+                state = State.objects.get(id=data.get('state'))
+                district = District.objects.get(id=data.get('district'))
+                taluk = Taluk.objects.get(id=data.get('taluk'))
+                truck_list = data.get('truck_list')
+                # Main Logic
+                transportation = TrackingTransportation.objects.get(id=transporter_id)
+                truck_request = TruckRequest.objects.get(id=truck_request_id)
+                # delete existing TruckRequestTypesList, TruckList
+                TruckRequestTypesList.objects.filter(truck_request=truck_request).delete()
+                TruckList.objects.filter(truck_request=truck_request).delete()
+                # update truck request
+                truck_request.transporter = transportation
+                truck_request.state = state
+                truck_request.district = district
+                truck_request.taluk = taluk
+                truck_request.pincode = data.get('pincode')
+                truck_request.status = data.get('status')
+                truck_request.remarks = data.get('remarks')
+                truck_request.updated_by = request.user
+                truck_request.save()
+                for truck_data in truck_list:
+                    quantity = truck_data.get('quantity')
+                    truck_type = TruckType.objects.get(id=truck_data.get('truck_type'))
+                    # create truck request types list
+                    truck_request_types_list = TruckRequestTypesList.objects.create(
+                        truck_request=truck_request,
+                        truck_type=truck_type,
+                        truck_count=truck_data.get('quantity')
+                    )
+                    for i in range(quantity):
+                        TruckList.objects.create(
+                            truck_type=truck_type,
+                            transportation=transportation,
+                            truck_request=truck_request,
+                            truck_request_types_list=truck_request_types_list,
+                            created_by=request.user,
+                            updated_by=request.user
+                        )
+                return Response({'message': 'Truck list updated successfully', 'status': status.HTTP_201_CREATED})
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
     @action(methods=['post'], detail=False, url_path='dynamic_filter_truck_list')
     def dynamic_filter_truck_list(self, request):
         try:
@@ -217,6 +266,17 @@ class TruckListViewSet(viewsets.ModelViewSet):
                 truck_list = TruckList.objects.filter(created_at__range=[date_from, date_to], **filter_data)
             else:
                 truck_list = TruckList.objects.filter(**filter_data)
+            serializer = TruckListSerializer(truck_list, many=True)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+    @action(methods=['post'], detail=False, url_path='truck_list_on_dil')
+    def truck_list_on_dil(self, request):
+        try:
+            data = request.data
+            truck_list_ids = TruckLoadingDetails.objects.filter(dil_id=data['dil_id']).values_list('truck_list_id', )
+            truck_list = TruckList.objects.filter(id__in=truck_list_ids)
             serializer = TruckListSerializer(truck_list, many=True)
             return Response(serializer.data, status=status.HTTP_200_OK)
         except Exception as e:
@@ -293,6 +353,9 @@ class TruckLoadingDetailsViewSet(viewsets.ModelViewSet):
                             box_details.update(loaded_flag=True, loaded_date=datetime.datetime.now())
                         else:
                             return Response({'error': 'Box code not found'}, status=status.HTTP_400_BAD_REQUEST)
+                    # Update truck list status & Dispatch status
+                    dispatch = DispatchInstruction.objects.filter(dil_id=dil_id)
+                    dispatch.filter(dil_status_no__in=[11, 12, 13]).update(dil_status_no=15)
                 else:
                     return Response({'error': 'Truck list not found'}, status=status.HTTP_400_BAD_REQUEST)
                 return Response({'message': 'loading details created successfully'}, status=status.HTTP_201_CREATED)
@@ -342,23 +405,25 @@ class DeliveryChallanViewSet(viewsets.ModelViewSet):
             dc_invoice_details = data.get('dc_inv_details')
             truck_list = TruckList.objects.filter(id=truck_list_id)
             truck_loading_details = TruckLoadingDetails.objects.filter(truck_list_id=truck_list_id)
-            no_of_boxes = truck_list.first().no_of_boxes
-            if truck_list is not None:
+            no_of_boxes = truck_list.first().no_of_boxes if truck_list.exists() else 0
+            if truck_list.exists():  # Check if truck_list exists
+                lrn_date = datetime.datetime.strptime(data.get('lrn_date'), "%Y-%m-%dT%H:%M:%S.%fZ").strftime("%Y-%m-%d")
                 delivery_challan = DeliveryChallan.objects.create(
                     truck_list=truck_list.first(),
                     e_way_bill_no=data.get('e_way_bill_no'),
                     lrn_no=data.get('lrn_no'),
-                    lrn_date=data.get('lrn_date'),
+                    lrn_date=lrn_date,  # Assign formatted date
                     no_of_boxes=no_of_boxes,
                     created_by=request.user,
                     updated_by=request.user
                 )
                 for dc_inv in dc_invoice_details:
+                    bill_date = datetime.datetime.strptime(dc_inv.get('bill_date'), "%Y-%m-%dT%H:%M:%S.%fZ").strftime("%Y-%m-%d")
                     DCInvoiceDetails.objects.create(
                         delivery_challan=delivery_challan,
                         truck_list=truck_list.first(),
                         bill_no=dc_inv.get('bill_no'),
-                        bill_date=dc_inv.get('bill_date'),
+                        bill_date=bill_date,  # Assign formatted date
                         bill_type=dc_inv.get('bill_type'),
                         bill_amount=dc_inv.get('bill_amount'),
                         created_by=request.user,
@@ -370,6 +435,45 @@ class DeliveryChallanViewSet(viewsets.ModelViewSet):
                 dil_ids = truck_loading_details.values_list('dil_id', flat=True).distinct()
                 dispatch = DispatchInstruction.objects.filter(dil_id__in=dil_ids)
                 dispatch.filter(dil_status_no=14).update(dil_status_no=15)
+                return Response(serializer.data, status=status.HTTP_201_CREATED)
+            else:
+                return Response({'error': 'Truck list not found'}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+    @action(methods=['post'], detail=False, url_path='update_delivery_challan')
+    def update_delivery_challan(self, request, *args, **kwargs):
+        try:
+            data = request.data
+            challan_id = data.get('id')
+            truck_list_id = data.get('truck_list')
+            dc_invoice_details = data.get('dc_inv_details')
+            # Main Logic
+            delivery_challan = DeliveryChallan.objects.filter(id=challan_id)
+            truck_list = TruckList.objects.filter(id=truck_list_id)
+            if delivery_challan.exists():
+                delivery_challan.update(
+                    truck_list=truck_list.first(),
+                    e_way_bill_no=data.get('e_way_bill_no'),
+                    lrn_no=data.get('lrn_no'),
+                    lrn_date=data.get('lrn_date'),
+                    no_of_boxes=truck_list.first().no_of_boxes,
+                    updated_by=request.user
+                )
+                # Delete existing invoice details
+                DCInvoiceDetails.objects.filter(delivery_challan=delivery_challan.first()).delete()
+                for dc_inv in dc_invoice_details:
+                    DCInvoiceDetails.objects.create(
+                        delivery_challan=delivery_challan.first(),
+                        truck_list=truck_list.first(),
+                        bill_no=dc_inv.get('bill_no'),
+                        bill_date=dc_inv.get('bill_date'),
+                        bill_type=dc_inv.get('bill_type'),
+                        bill_amount=dc_inv.get('bill_amount'),
+                        created_by=request.user,
+                        updated_by=request.user
+                    )
+                serializer = DeliveryChallanSerializer(delivery_challan.first())
                 return Response(serializer.data, status=status.HTTP_201_CREATED)
             else:
                 return Response({'error': 'Truck list not found'}, status=status.HTTP_400_BAD_REQUEST)
