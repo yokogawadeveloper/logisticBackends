@@ -21,11 +21,11 @@ class BoxTypeSerializer(serializers.ModelSerializer):
 
 
 class BoxSizeSerializer(serializers.ModelSerializer):
-    box_type = BoxTypeSerializer(source='box_type_id', read_only=True)
+    box_type = BoxTypeSerializer(read_only=True)
 
     class Meta:
         model = BoxSize
-        fields = '__all__'
+        fields = ('box_size_id', 'box_type', 'box_size', 'box_description', 'created_by', 'created_at', 'updated_by',)
         read_only_fields = ('created_by', 'updated_by')
 
     def create(self, validated_data):
@@ -38,20 +38,19 @@ class BoxSizeSerializer(serializers.ModelSerializer):
 
 
 class BoxDetailSerializer(serializers.ModelSerializer):
-    created_by = serializers.HiddenField(default=serializers.CurrentUserDefault())
-    updated_by = serializers.HiddenField(default=serializers.CurrentUserDefault())
+    box_size = BoxSizeSerializer(read_only=True)
 
     class Meta:
         model = BoxDetails
         fields = '__all__'
         read_only_fields = ('created_by', 'updated_by')
-        depth = 1
-
-    def __init__(self, *args, **kwargs):
-        depth = kwargs.get('context', {}).get('depth', 0)
-        super().__init__(*args, **kwargs)
-        if depth <= 1:
-            self.fields.pop('dil_id')
+    #     depth = 1
+    #
+    # def __init__(self, *args, **kwargs):
+    #     depth = kwargs.get('context', {}).get('depth', 0)
+    #     super().__init__(*args, **kwargs)
+    #     if depth <= 1:
+    #         self.fields.pop('dil_id')
 
     def create(self, validated_data):
         validated_data['created_by'] = self.context['request'].user
