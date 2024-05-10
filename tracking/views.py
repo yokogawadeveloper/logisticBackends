@@ -269,9 +269,11 @@ class TruckListViewSet(viewsets.ModelViewSet):
             serializer = TruckListSerializer(truck_list, many=True)
             for data in serializer.data:
                 loading_details = TruckLoadingDetails.objects.filter(truck_list_id=data['id'])
-                loading_details_serializer = TruckLoadingDetailsSerializer(loading_details, many=True)
+                loading_details_serializer = TruckLoadingDetailsSerializer(loading_details.first(), many=False)
+
                 delivery_challan = DeliveryChallan.objects.filter(truck_list=data['id'])
                 delivery_challan_serializer = DeliveryChallanSerializer(delivery_challan.first(), many=False)
+
                 data['delivery_challan'] = delivery_challan_serializer.data
                 data['loading_details'] = loading_details_serializer.data
             return Response(serializer.data, status=status.HTTP_200_OK)
