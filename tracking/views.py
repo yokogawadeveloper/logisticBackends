@@ -270,7 +270,10 @@ class TruckListViewSet(viewsets.ModelViewSet):
             for data in serializer.data:
                 loading_details = TruckLoadingDetails.objects.filter(truck_list_id=data['id'])
                 loading_details_serializer = TruckLoadingDetailsSerializer(loading_details, many=True)
+                delivery_challan = DeliveryChallan.objects.filter(truck_list=data['id'])
+                delivery_challan_serializer = DeliveryChallanSerializer(delivery_challan, many=True)
                 data['loading_details'] = loading_details_serializer.data
+                data['delivery_challan'] = delivery_challan_serializer.data
             return Response(serializer.data, status=status.HTTP_200_OK)
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
@@ -283,6 +286,24 @@ class TruckListViewSet(viewsets.ModelViewSet):
             truck_list = TruckList.objects.filter(id__in=truck_list_ids)
             serializer = TruckListSerializer(truck_list, many=True)
             return Response(serializer.data, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+    @action(methods=['post'], detail=False, url_path='checkout_truck_list')
+    def checkout_truck_list(self, request):
+        try:
+            data = request.data
+            truck_list_id = data['truck_list_id']
+            truck_list = TruckList.objects.filter(id=truck_list_id)
+            if truck_list.exists():
+                truck_list.update(
+                    check_out=data['check_out'],
+                    check_out_remarks=data['check_out_remarks'],
+                    check_out_by=request.user
+                )
+                return Response({'message': 'Truck checked out successfully','status':status.HTTP_200_OK})
+            else:
+                return Response({'error': 'Truck list not found'}, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
