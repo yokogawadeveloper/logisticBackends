@@ -38,6 +38,12 @@ class TruckListSerializer(serializers.ModelSerializer):
         fields = '__all__'
         depth = 1
 
+    def __init__(self, *args, **kwargs):
+        depth = kwargs.get('context', {}).get('depth', 0)
+        super().__init__(*args, **kwargs)
+        if depth <= 1:
+            self.fields.pop('check_out_by')
+
 
 class TruckLoadingDetailsSerializer(serializers.ModelSerializer):
     created_by = serializers.HiddenField(default=serializers.CurrentUserDefault())
