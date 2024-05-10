@@ -7,6 +7,7 @@ from rest_framework.response import Response
 from .serializers import *
 from .models import *
 import random
+import datetime
 
 
 # Create your views here.
@@ -141,6 +142,13 @@ class BoxDetailViewSet(viewsets.ModelViewSet):
                     update_list.append(model_obj)
                 # update the BoxDetails
                 BoxDetails.objects.bulk_update(update_list, ['parent_box', 'status', 'box_serial_no'])
+                master_list = MasterItemList.objects.filter(dil_id=data['dil_id'], status_no__lte=4).count()
+                if master_list == 0:
+                    dispatch.update(
+                        dil_status="Packed ,Ready For Load ",
+                        dil_status_no=11, packed_flag=True,
+                        packed_date=datetime.datetime.now()
+                    )
                 return Response(serializer.data, status=status.HTTP_201_CREATED)
         except Exception as e:
             transaction.rollback()
@@ -366,11 +374,16 @@ class ItemPackingViewSet(viewsets.ModelViewSet):
                     #     item_obj.packing_flag = 3
                     # appending latest records
                     update_list.append(item_obj)
-                MasterItemList.objects.bulk_update(update_list, ['packed_quantity', 'status', 'packing_flag', 'status_no'])
+                MasterItemList.objects.bulk_update(update_list,
+                                                   ['packed_quantity', 'status', 'packing_flag', 'status_no'])
                 # update the dispatch advice status
                 master_list = MasterItemList.objects.filter(dil_id=data['dil_id'], status_no__lte=4).count()
                 if master_list == 0:
-                    dispatch.update(dil_status="Packed ,Ready For Load ", dil_status_no=11)
+                    dispatch.update(
+                        dil_status="Packed ,Ready For Load ",
+                        dil_status_no=11, packed_flag=True,
+                        packed_date=datetime.datetime.now()
+                        )
                 # return serializer data
                 query_set = self.queryset.latest('item_packing_id')
                 serializer = self.serializer_class(query_set, context={'request': request})

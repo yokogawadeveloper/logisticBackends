@@ -355,7 +355,12 @@ class TruckLoadingDetailsViewSet(viewsets.ModelViewSet):
                             return Response({'error': 'Box code not found'}, status=status.HTTP_400_BAD_REQUEST)
                     # Update truck list status & Dispatch status
                     dispatch = DispatchInstruction.objects.filter(dil_id=dil_id)
-                    dispatch.filter(dil_status_no__in=[11, 12, 13]).update(dil_status_no=15)
+                    dispatch.filter(dil_status_no__in=[11, 12, 13]).update(
+                        dil_status_no=15,
+                        status='Loaded',
+                        loaded_flag=True,
+                        loaded_date=datetime.datetime.now()
+                    )
                 else:
                     return Response({'error': 'Truck list not found'}, status=status.HTTP_400_BAD_REQUEST)
                 return Response({'message': 'loading details created successfully'}, status=status.HTTP_201_CREATED)
@@ -407,7 +412,8 @@ class DeliveryChallanViewSet(viewsets.ModelViewSet):
             truck_loading_details = TruckLoadingDetails.objects.filter(truck_list_id=truck_list_id)
             no_of_boxes = truck_list.first().no_of_boxes if truck_list.exists() else 0
             if truck_list.exists():  # Check if truck_list exists
-                lrn_date = datetime.datetime.strptime(data.get('lrn_date'), "%Y-%m-%dT%H:%M:%S.%fZ").strftime("%Y-%m-%d")
+                lrn_date = datetime.datetime.strptime(data.get('lrn_date'), "%Y-%m-%dT%H:%M:%S.%fZ").strftime(
+                    "%Y-%m-%d")
                 delivery_challan = DeliveryChallan.objects.create(
                     truck_list=truck_list.first(),
                     e_way_bill_no=data.get('e_way_bill_no'),
@@ -418,7 +424,8 @@ class DeliveryChallanViewSet(viewsets.ModelViewSet):
                     updated_by=request.user
                 )
                 for dc_inv in dc_invoice_details:
-                    bill_date = datetime.datetime.strptime(dc_inv.get('bill_date'), "%Y-%m-%dT%H:%M:%S.%fZ").strftime("%Y-%m-%d")
+                    bill_date = datetime.datetime.strptime(dc_inv.get('bill_date'), "%Y-%m-%dT%H:%M:%S.%fZ").strftime(
+                        "%Y-%m-%d")
                     DCInvoiceDetails.objects.create(
                         delivery_challan=delivery_challan,
                         truck_list=truck_list.first(),
