@@ -8,6 +8,7 @@ from subordinate.views import *
 from subordinate.labels import *
 from workflow.views import *
 from tracking.views import *
+from reports.views import *
 
 # Add routers here.
 
@@ -65,3 +66,6 @@ router.register('truck_request', TruckRequestViewSet, basename='truck_request')
 router.register('truck_list', TruckListViewSet, basename='truck_list')
 router.register('truck_loading_details', TruckLoadingDetailsViewSet, basename='truck_loading_details')
 router.register('delivery_challan', DeliveryChallanViewSet, basename='delivery_challan')
+
+# ----------------------------- Reports ------------------------------------------- #
+router.register('dispatch_report', DispatchReportViewSet, basename='dispatch_report')
