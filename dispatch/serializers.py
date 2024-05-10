@@ -6,6 +6,7 @@ from .models import *
 class DispatchInstructionSerializer(serializers.ModelSerializer):
     dil_no = serializers.CharField(max_length=20, required=True)
     request_by = serializers.CharField(source='request.user.username', read_only=True)
+    created_by = serializers.HiddenField(default=serializers.CurrentUserDefault())
     updated_by = serializers.HiddenField(default=serializers.CurrentUserDefault())
 
     class Meta:

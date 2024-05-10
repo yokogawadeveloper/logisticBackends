@@ -86,27 +86,27 @@ WSGI_APPLICATION = 'logistic.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
-# DATABASES = {
-#     'default': {
-#         'ENGINE': 'django.db.backends.postgresql',
-#         'NAME': 'May_Logistic',
-#         'USER': 'postgres',
-#         'PASSWORD': 'Yil@1234567',
-#         'HOST': 'localhost',
-#         'PORT': '5432',
-#     }
-# }
-
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'NewLogisticDB',
+        'NAME': 'May_Logistic',
         'USER': 'postgres',
-        'PASSWORD': 'Yil@1234',
-        'HOST': '10.29.15.142',
+        'PASSWORD': 'Yil@1234567',
+        'HOST': 'localhost',
         'PORT': '5432',
     }
 }
+
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.postgresql',
+#         'NAME': 'NewLogisticDB',
+#         'USER': 'postgres',
+#         'PASSWORD': 'Yil@1234',
+#         'HOST': '10.29.15.142',
+#         'PORT': '5432',
+#     }
+# }
 
 
 # Password validation

@@ -267,6 +267,10 @@ class TruckListViewSet(viewsets.ModelViewSet):
             else:
                 truck_list = TruckList.objects.filter(**filter_data)
             serializer = TruckListSerializer(truck_list, many=True)
+            for data in serializer.data:
+                loading_details = TruckLoadingDetails.objects.filter(truck_list_id=data['id'])
+                loading_details_serializer = TruckLoadingDetailsSerializer(loading_details, many=True)
+                data['loading_details'] = loading_details_serializer.data
             return Response(serializer.data, status=status.HTTP_200_OK)
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
@@ -357,7 +361,7 @@ class TruckLoadingDetailsViewSet(viewsets.ModelViewSet):
                     dispatch = DispatchInstruction.objects.filter(dil_id=dil_id)
                     dispatch.filter(dil_status_no__in=[11, 12, 13]).update(
                         dil_status_no=15,
-                        status='Loaded',
+                        dil_status='Loaded',
                         loaded_flag=True,
                         loaded_date=datetime.datetime.now()
                     )

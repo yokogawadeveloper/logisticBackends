@@ -89,6 +89,8 @@ class TruckList(models.Model):
     check_in_remarks = models.CharField(max_length=500, null=True, blank=True)
     check_out_remarks = models.CharField(max_length=500, null=True, blank=True)
     check_out = models.DateTimeField(null=True, blank=True)
+    check_out_by = models.ForeignKey(User,null=True, on_delete=models.CASCADE)
+    gate_pass_no = models.IntegerField(default=0)
     status = models.CharField(max_length=50, default='Open')
     loading_remarks = models.CharField(max_length=300, null=True)
     delivered_datetime = models.DateTimeField(null=True)
