@@ -1,9 +1,10 @@
-from rest_framework import permissions
-from rest_framework import viewsets, status
+from dispatch.serializers import DispatchInstructionSerializer
+from rest_framework import permissions, viewsets, status
 from rest_framework.response import Response
 from rest_framework.decorators import action
 from django.db import transaction
 from packing.models import BoxDetails
+
 from .serializers import *
 import datetime
 
@@ -266,6 +267,7 @@ class TruckListViewSet(viewsets.ModelViewSet):
                 truck_list = TruckList.objects.filter(created_at__range=[date_from, date_to], **filter_data)
             else:
                 truck_list = TruckList.objects.filter(**filter_data)
+
             serializer = TruckListSerializer(truck_list, many=True)
             for data in serializer.data:
                 loading_details = TruckLoadingDetails.objects.filter(truck_list_id=data['id'])
@@ -303,9 +305,36 @@ class TruckListViewSet(viewsets.ModelViewSet):
                     check_out_remarks=data['check_out_remarks'],
                     check_out_by=request.user
                 )
-                return Response({'message': 'Truck checked out successfully','status':status.HTTP_200_OK})
+                return Response({'message': 'Truck checked out successfully', 'status': status.HTTP_200_OK})
             else:
                 return Response({'error': 'Truck list not found'}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+    @action(methods=['post'], detail=False, url_path='dynamic_dil_or_truck_list')
+    def dynamic_dil_or_truck_list(self, request):
+        try:
+            dispatch_filter = request.data['dispatch_filter']
+            truck_filter = request.data['truck_filter']
+            if dispatch_filter and truck_filter:
+                dispatch = DispatchInstruction.objects.filter(**dispatch_filter)
+                loading = TruckLoadingDetails.objects.filter(dil_id__in=dispatch.values_list('dil_id', flat=True))
+                truck_list = TruckList.objects.filter(id__in=loading.values_list('truck_list_id', flat=True),
+                                                      **truck_filter)
+                serializer = TruckListSerializer(truck_list, many=True)
+                for data in serializer.data:
+                    loading_details = TruckLoadingDetails.objects.filter(truck_list_id=data['id'])
+                    loading_details_serializer = TruckLoadingDetailsSerializer(loading_details.first(), many=False)
+
+                    delivery_challan = DeliveryChallan.objects.filter(truck_list=data['id'])
+                    delivery_challan_serializer = DeliveryChallanSerializer(delivery_challan.first(), many=False)
+
+                    data['delivery_challan'] = delivery_challan_serializer.data
+                    data['loading_details'] = loading_details_serializer.data
+                return Response(serializer.data, status=status.HTTP_200_OK)
+            else:
+                return Response({'error': 'Dispatch filter or Truck filter is required'},
+                                status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
