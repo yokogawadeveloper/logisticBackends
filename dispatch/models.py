@@ -20,6 +20,7 @@ class DispatchInstruction(models.Model):
     current_level = models.IntegerField(null=True, blank=True, default=0)
     dil_level = models.IntegerField(null=True, blank=True, default=0)
     manual_tcs_gc = models.CharField(max_length=100, null=True, blank=True)
+
     # other related fields
     insurance_scope = models.ForeignKey(InsuranceScope, on_delete=models.CASCADE, null=True, blank=True)
     freight_basis = models.ForeignKey(FreightBasis, on_delete=models.CASCADE, null=True, blank=True)
@@ -69,6 +70,8 @@ class DispatchInstruction(models.Model):
     dispatched_flag = models.BooleanField(default=False)
     dispatched_date = models.DateField(blank=True, null=True)
     # address
+    bill_type = models.CharField(max_length=100, null=True, blank=True)
+    business_unit = models.CharField(max_length=100, null=True, blank=True)
     ship_to_party_no = models.CharField(max_length=100, null=True, blank=True)
     ship_to_party_name = models.CharField(max_length=100, null=True, blank=True)
     ship_to_country = models.CharField(max_length=100, null=True, blank=True)

@@ -1,4 +1,5 @@
 from rest_framework import serializers
+from dispatch.serializers import DispatchInstructionSerializer
 from .models import *
 
 
@@ -39,12 +40,14 @@ class BoxSizeSerializer(serializers.ModelSerializer):
 
 class BoxDetailSerializer(serializers.ModelSerializer):
     box_size = BoxSizeSerializer(read_only=True)
+    created_by = serializers.HiddenField(default=serializers.CurrentUserDefault())
+    updated_by = serializers.HiddenField(default=serializers.CurrentUserDefault())
 
     class Meta:
         model = BoxDetails
         fields = '__all__'
         read_only_fields = ('created_by', 'updated_by')
-    #     depth = 1
+        depth = 1
     #
     # def __init__(self, *args, **kwargs):
     #     depth = kwargs.get('context', {}).get('depth', 0)

@@ -69,3 +69,4 @@ router.register('delivery_challan', DeliveryChallanViewSet, basename='delivery_c
 
 # ----------------------------- Reports ------------------------------------------- #
 router.register('dispatch_report', DispatchReportViewSet, basename='dispatch_report')
+router.register('box_details_report', BoxDetailsReportViewSet, basename='box_details_report')
