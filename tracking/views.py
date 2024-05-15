@@ -1,10 +1,8 @@
-from dispatch.serializers import DispatchInstructionSerializer
 from rest_framework import permissions, viewsets, status
 from rest_framework.response import Response
 from rest_framework.decorators import action
 from django.db import transaction
 from packing.models import BoxDetails
-
 from .serializers import *
 import datetime
 

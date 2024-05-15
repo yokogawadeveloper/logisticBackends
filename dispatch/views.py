@@ -12,10 +12,8 @@ from .utils import send_email
 from workflow.models import *
 from .serializers import *
 import pandas as pd
+import pyodbc
 import time
-
-from packing.models import BoxDetails
-from django.db.models import Sum
 
 
 # Create your views here.
@@ -120,7 +118,6 @@ class DispatchInstructionViewSet(viewsets.ModelViewSet):
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
-
     @action(methods=['post'], detail=False, url_path='get_complete_dil_creation_wise')
     def get_complete_dil_creation_wise(self, request):
         try:
@@ -221,6 +218,55 @@ class SAPDispatchInstructionViewSet(viewsets.ModelViewSet):
                 return Response({'message': 'DIL Not found for this delivery', 'status': status.HTTP_204_NO_CONTENT})
             serializer = SAPDispatchInstructionSerializer(dil, many=True)
             return Response(serializer.data)
+        except Exception as e:
+            return Response({'message': str(e), 'status': status.HTTP_400_BAD_REQUEST})
+
+    @action(detail=False, methods=['post'], url_path='sap_so_details')
+    def sap_so_details(self, request, *args, **kwargs):
+        try:
+            delivery_no = request.data['delivery']
+            sap_data = SAPDispatchInstruction.objects.filter(delivery=delivery_no).last()
+            reference_doc = sap_data.reference_doc
+            dispatch_po_details = DispatchPODetails.objects.filter(so_no=reference_doc)
+            if dispatch_po_details.exists():
+                po_no = dispatch_po_details.values('po_no')[0]['po_no']
+                po_date = dispatch_po_details.values('po_date')[0]['po_date']
+                serializer = SAPDispatchInstructionSerializer(sap_data)
+                sap_serializer_data = serializer.data
+                sap_serializer_data['po_no'] = po_no
+                sap_serializer_data['po_date'] = po_date
+                return Response(sap_serializer_data)
+            else:
+                server = '10.29.15.169'
+                database = 'Logisticks070224'
+                username = 'sa'
+                password = 'Yokogawa@12345'
+                # Establish connection
+                connection = pyodbc.connect(
+                    'DRIVER={SQL Server};SERVER=' + server + ';DATABASE=' + database + ';UID=' + username + ';PWD=' + password)
+                connection_cursor = connection.cursor()
+                # Execute query
+                query = ('SELECT TOP 1 PONO, PODate, PaymentomText, WarrantyPeriod FROM WA_SaleOrderMaster WHERE SoNo '
+                         '= ?')
+                connection_cursor.execute(query, (reference_doc,))
+                result = connection_cursor.fetchall()
+                if result:
+                    DispatchPODetails.objects.create(
+                        so_no=reference_doc,
+                        po_no=result[0].PONO,
+                        po_date=result[0].PODate,
+                        created_by=request.user,
+                        updated_by=request.user
+                    )
+                    connection_cursor.close()
+                    connection.close()
+                    serializer = SAPDispatchInstructionSerializer(sap_data)
+                    sap_serializer_data = serializer.data
+                    sap_serializer_data['po_no'] = result[0].PONO
+                    sap_serializer_data['po_date'] = result[0].PODate
+                    return Response(sap_serializer_data)
+                else:
+                    return Response({'message': 'No data found', 'status': status.HTTP_204_NO_CONTENT})
         except Exception as e:
             return Response({'message': str(e), 'status': status.HTTP_400_BAD_REQUEST})
 
@@ -554,16 +600,20 @@ class MasterItemListViewSet(viewsets.ModelViewSet):
                 quantity = item_data.get("sales_quantity")
                 plant = item_data.get("plant")
                 storage_location = item_data.get("s_loc")
+                item_no = item_data.get("reference_doc_item")
+                unit_of_measurement = item_data.get("unit_delivery")
                 # Create DispatchBillDetails instance
                 MasterItemList.objects.create(
                     dil_id=dil,
-                    material_description=material_description,
+                    item_no=item_no,
                     material_no=material_no,
                     ms_code=ms_code,
                     linkage_no=linkage_no,
                     quantity=quantity,
                     plant=plant,
                     s_loc=storage_location,
+                    material_description=material_description,
+                    unit_of_measurement=unit_of_measurement,
                     created_by=request.user
                 )
             return Response({'message': 'Multi Master List created !', 'status': status.HTTP_201_CREATED})
@@ -895,7 +945,7 @@ class DILAuthThreadsViewSet(viewsets.ModelViewSet):
                     mail_dil_context = {'data': mail_dil_serializer.data}
                     cc.append(request.user.email)
                     cc.extend(['YIL.Developer4@yokogawa.com', 'ankul.gautam@yokogawa.com'])
-                    subject = 'DA Prepared-Re-Export'
+                    subject = 'DA Prepared'
                     message = render_to_string("prepare_dil.html", mail_dil_context)
 
                     current_level = dil.values('current_level')[0]['current_level']

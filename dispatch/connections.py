@@ -15,8 +15,8 @@ class ConnectionDispatchViewSet(viewsets.ModelViewSet):
     serializer_class = DispatchInstructionSerializer
     permission_classes = [permissions.IsAuthenticated]
 
-    @action(detail=False, methods=['post'], url_path='dump_dispatch')
-    def dump_dispatch(self, request, pk=None):
+    @action(detail=False, methods=['post'], url_path='dump_dispatch_po_details')
+    def dump_dispatch_po_details(self, request, pk=None):
         so_no = request.data.get('so_no')
         try:
             server = '10.29.15.169'
@@ -55,8 +55,8 @@ class ConnectionDispatchViewSet(viewsets.ModelViewSet):
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
-    @action(detail=False, methods=['post'], url_path='external_dump_master')
-    def external_dump_master(self, request, pk=None):
+    @action(detail=False, methods=['post'], url_path='dump_master_list')
+    def dump_master_list(self, request, pk=None):
         so_no = request.data.get('so_no')
         dil_id = request.data.get('dil_id')
         try:
@@ -124,3 +124,4 @@ class ConnectionDispatchViewSet(viewsets.ModelViewSet):
             return Response(json_results, status=status.HTTP_200_OK)
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+

@@ -221,6 +221,7 @@ class MasterItemList(models.Model):
     item_id = models.AutoField(primary_key=True)
     dil_id = models.ForeignKey(DispatchInstruction, on_delete=models.CASCADE, null=True, blank=True)
     item_no = models.CharField(max_length=100, null=True, blank=True)
+    unit_of_measurement = models.CharField(max_length=100, null=True, blank=True)
     so_no = models.CharField(max_length=100, null=True, blank=True)
     material_description = models.CharField(max_length=100, null=True, blank=True)
     material_no = models.CharField(max_length=100, null=True, blank=True)

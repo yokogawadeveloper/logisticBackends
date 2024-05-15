@@ -2,6 +2,7 @@ from rest_framework import routers
 from accounts.views import *
 from dispatch.views import *
 from dispatch.connections import *
+from dispatch.exports import *
 from master.views import *
 from packing.views import *
 from subordinate.views import *
@@ -29,6 +30,7 @@ router.register('da_user_request_allocation', DAUserRequestAllocationViewSet, ba
 router.register('dil_auth_thread', DILAuthThreadsViewSet, basename='dil_auth_thread')
 # from connection
 router.register('connection_dispatch', ConnectionDispatchViewSet, basename='connection_dispatch')
+router.register('export_dispatch', ExportDispatchViewSet, basename='export_dispatch')
 # ----------------------------- Master ------------------------------------------- #
 router.register('role_master', RoleMasterViewSet, basename='role_master')
 router.register('module_master', ModuleMasterViewSet, basename='module_master')
