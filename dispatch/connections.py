@@ -91,7 +91,7 @@ class ConnectionDispatchViewSet(viewsets.ModelViewSet):
             json_results = [dict(zip([column[0] for column in connection_cursor.description], row)) for row in results]
             for item in json_results:
                 master_item = MasterItemList.objects.filter(item_no=item['ItemNo'], so_no=so_no)
-                previous_serial_no_qty = master_item.first().serial_no_qty
+                previous_serial_no_qty = master_item.first().serial_no_qty if master_item.exists() else 0
                 master_item.update(
                     warranty_date=item['WarrantyDate'],
                     warranty_flag=True,
@@ -100,14 +100,18 @@ class ConnectionDispatchViewSet(viewsets.ModelViewSet):
                     serial_no_qty=previous_serial_no_qty + 1,
                     custom_po_flag=True
                 )
-                # Create & Delete new InlineItemList records
-                InlineItemList.objects.filter(master_item=master_item.first()).delete()
-                InlineItemList.objects.create(
-                    master_item=master_item.first(),
-                    serial_no=item['Serialnumber'],
-                    tag_no=item['TagNo'],
-                    quantity=1
-                )
+                # Create & Delete new InlineItemList
+                if (item['Serialnumber'] == '' or item['Serialnumber'] is None) and (item['TagNo'] == '' or item['TagNo'] is None):
+                    pass
+                else:
+                    InlineItemList.objects.filter(master_item=master_item.first()).delete()
+                    InlineItemList.objects.create(
+                        master_item=master_item.first(),
+                        serial_no=item['Serialnumber'],
+                        tag_no=item['TagNo'],
+                        quantity=1
+                    )
+
             # update Master Item List
             master_lists = MasterItemList.objects.filter(dil_id=dil_id)
             master_serial_update = master_lists.filter(quantity=F('serial_no_qty'), serial_flag=False)
@@ -115,7 +119,7 @@ class ConnectionDispatchViewSet(viewsets.ModelViewSet):
             # Dispatch Update
             master_list_serial_flag_count = master_lists.filter(serial_flag=False).count()
             if master_list_serial_flag_count == 0:
-                dispatch_instruction = DispatchInstruction.objects.get(id=dil_id)
+                dispatch_instruction = DispatchInstruction.objects.get(dil_id=dil_id)
                 dispatch_instruction.updated_serial_flag = True
                 dispatch_instruction.save()
             connection.commit()
@@ -124,4 +128,3 @@ class ConnectionDispatchViewSet(viewsets.ModelViewSet):
             return Response(json_results, status=status.HTTP_200_OK)
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
-
