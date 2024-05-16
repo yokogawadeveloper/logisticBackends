@@ -80,5 +80,3 @@ class WorkFlowDaApproversSerializer(serializers.ModelSerializer):
     def update(self, instance, validated_data):
         instance.wf_id = validated_data.get('wf_id', instance.wf_id)
         return super(WorkFlowDaApproversSerializer, self).update(instance=instance, validated_data=validated_data)
-
-

@@ -3,6 +3,7 @@ from rest_framework.decorators import action
 from rest_framework import status
 from rest_framework import viewsets
 from rest_framework import permissions
+from accounts.serializers import EmployeeUserSerializer
 from .serializers import *
 
 
@@ -284,6 +285,10 @@ class WorkFlowDaApproversViewSet(viewsets.ModelViewSet):
         try:
             dil_id = request.data['dil_id']
             data = WorkFlowDaApprovers.objects.filter(dil_id=dil_id).values().order_by('wfd_id')
-            return Response(data, status=status.HTTP_200_OK)
+            for item in data:
+                user_details = User.objects.get(username=item['emp_id'])
+                user_serializer = EmployeeUserSerializer(user_details)
+                item['emp_details'] = user_serializer.data
+            return Response(data)
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
