@@ -1,11 +1,14 @@
+from django.http import HttpResponse
 from rest_framework import viewsets
 from rest_framework.response import Response
 from rest_framework.decorators import action
 from rest_framework import status, permissions
+from django.conf import settings
 from django.db.models import F
 from .serializers import *
 from .models import *
 import pyodbc
+import os
 
 
 # ViewSets define the view behavior.
@@ -101,7 +104,8 @@ class ConnectionDispatchViewSet(viewsets.ModelViewSet):
                     custom_po_flag=True
                 )
                 # Create & Delete new InlineItemList
-                if (item['Serialnumber'] == '' or item['Serialnumber'] is None) and (item['TagNo'] == '' or item['TagNo'] is None):
+                if (item['Serialnumber'] == '' or item['Serialnumber'] is None) and (
+                        item['TagNo'] == '' or item['TagNo'] is None):
                     pass
                 else:
                     InlineItemList.objects.filter(master_item=master_item.first()).delete()
@@ -128,3 +132,5 @@ class ConnectionDispatchViewSet(viewsets.ModelViewSet):
             return Response(json_results, status=status.HTTP_200_OK)
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+

@@ -1,8 +1,7 @@
 from rest_framework import routers
 from accounts.views import *
 from dispatch.views import *
-from dispatch.connections import *
-from dispatch.exports import *
+from dispatch.outwards import *
 from master.views import *
 from packing.views import *
 from subordinate.views import *
@@ -28,9 +27,9 @@ router.register('file_type', FileTypeViewSet, basename='file_type')
 router.register('multi_file_attachment', MultiFileAttachmentViewSet, basename='multi_file_attachment')
 router.register('da_user_request_allocation', DAUserRequestAllocationViewSet, basename='da_user_request_allocation')
 router.register('dil_auth_thread', DILAuthThreadsViewSet, basename='dil_auth_thread')
-# from connection
+# from outwards.py
 router.register('connection_dispatch', ConnectionDispatchViewSet, basename='connection_dispatch')
-router.register('export_dispatch', ExportDispatchViewSet, basename='export_dispatch')
+
 # ----------------------------- Master ------------------------------------------- #
 router.register('role_master', RoleMasterViewSet, basename='role_master')
 router.register('module_master', ModuleMasterViewSet, basename='module_master')
@@ -72,3 +71,4 @@ router.register('delivery_challan', DeliveryChallanViewSet, basename='delivery_c
 # ----------------------------- Reports ------------------------------------------- #
 router.register('dispatch_report', DispatchReportViewSet, basename='dispatch_report')
 router.register('box_details_report', BoxDetailsReportViewSet, basename='box_details_report')
+router.register('packing_list_pdf_export', PackingListPDFExport, basename='packing_list_pdf_export')

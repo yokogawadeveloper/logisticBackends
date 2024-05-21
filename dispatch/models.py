@@ -219,7 +219,7 @@ class DispatchPODetails(models.Model):
 
 class MasterItemList(models.Model):
     item_id = models.AutoField(primary_key=True)
-    dil_id = models.ForeignKey(DispatchInstruction, on_delete=models.CASCADE, null=True, blank=True)
+    dil_id = models.ForeignKey(DispatchInstruction,related_name='master_list', on_delete=models.CASCADE, null=True, blank=True)
     item_no = models.CharField(max_length=100, null=True, blank=True)
     unit_of_measurement = models.CharField(max_length=100, null=True, blank=True)
     so_no = models.CharField(max_length=100, null=True, blank=True)
@@ -272,8 +272,7 @@ class MasterItemList(models.Model):
 
 class InlineItemList(models.Model):
     inline_item_id = models.AutoField(primary_key=True)
-    master_item = models.ForeignKey(MasterItemList, related_name='inline_items', on_delete=models.CASCADE, null=True,
-                                    blank=True)
+    master_item = models.ForeignKey(MasterItemList, related_name='inline_items', on_delete=models.CASCADE, null=True,blank=True)
     serial_no = models.CharField(max_length=100, null=True, blank=True)
     tag_no = models.CharField(max_length=100, null=True, blank=True)
     accessory = models.CharField(max_length=100, null=True, blank=True)
