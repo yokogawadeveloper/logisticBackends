@@ -123,28 +123,18 @@ class PackingListPDFExport(viewsets.ModelViewSet):
                 master_item_data['inline_items'].append(inline_item_data)
 
             response_data['master_list'].append(master_item_data)
-
-        # Render the HTML template with the enriched data
+        # Create PDF file
         response = HttpResponse(content_type='application/pdf')
         response['Content-Disposition'] = 'attachment; filename="dispatch_instruction.pdf"'
-
-        # Create a canvas object and set the PDF's title
         c = canvas.Canvas(response, pagesize=A4)
         c.setTitle("Sample PDF with Header and Footer")
         width, height = A4
 
-        # Function to draw header
         def draw_header(canvas):
             canvas.setFont("Helvetica-Bold", 12)
-
-            # Draw the logo
             logo_path = os.path.join(settings.MEDIA_ROOT, "dispatch_export", "yokogawa_logo.jpg")
             canvas.drawImage(logo_path, inch, height - inch - 30, width=150, height=30)
-
-            # Draw Packing List Title
             canvas.drawString(6 * inch, height - inch, "Packing List")
-
-            # Draw Company Info
             canvas.setFont("Helvetica", 10)
             company_info = [
                 "Yokogawa India Limited",
@@ -158,7 +148,6 @@ class PackingListPDFExport(viewsets.ModelViewSet):
                 text_object.textLine(line)
             canvas.drawText(text_object)
 
-            # Draw Document Info
             doc_info = [
                 f"DO No: {dil.dil_no}",
                 f"DO Date: {dil.dil_date}",
@@ -169,22 +158,17 @@ class PackingListPDFExport(viewsets.ModelViewSet):
             for line in doc_info:
                 text_object.textLine(line)
             canvas.drawText(text_object)
-
-            # Draw a line below the header
             canvas.line(inch, height - 2.8 * inch, width - inch, height - 2.8 * inch)
 
-        # Function to draw footer
         def draw_footer(canvas, page_number):
             canvas.setFont("Helvetica", 10)
             footer_text = f"Page {page_number}"
             canvas.drawString(inch, inch / 2, footer_text)
 
-        # Function to draw content
-        def draw_content(canvas):
+        def draw_content(canvas, y_position):
             canvas.setFont("Helvetica", 10)
-            y_position = height - 3 * inch  # Initial y_position
+            y_position -= 20
 
-            # Ship To section
             canvas.drawString(inch, y_position, "Ship To:")
             ship_to_info = [
                 "Yokogawa India Limited",
@@ -198,66 +182,72 @@ class PackingListPDFExport(viewsets.ModelViewSet):
                 text_object.textLine(line)
             canvas.drawText(text_object)
 
-            # Bill To section
-            canvas.drawString(4 * inch, y_position, "Bill To:")  # Adjusted x_position to fit on the page
-            bill_to_info = ship_to_info
-            text_object = canvas.beginText(4 * inch, y_position - 15)  # Adjusted x_position to fit on the page
-            for line in bill_to_info:
+            canvas.drawString(4 * inch, y_position, "Bill To:")
+            text_object = canvas.beginText(4 * inch, y_position - 15)
+            for line in ship_to_info:
                 text_object.textLine(line)
             canvas.drawText(text_object)
 
-            # Draw a line below the Ship To and Bill To sections
             y_position -= 90
             canvas.line(inch, y_position, width - inch, y_position)
 
-            # Item details section
             y_position -= 15
             canvas.drawString(inch, y_position, "Packing Id")
             canvas.drawString(2 * inch, y_position, "Model Description")
             canvas.drawString(5 * inch, y_position, "Quantity/Quantity Unit")
 
-            # Draw item details
             y_position -= 15
             for item in response_data['master_list']:
+                if y_position < inch:
+                    canvas.showPage()
+                    draw_header(canvas)
+                    y_position = height - 3 * inch - 20  # Add extra gap after header on new page
                 canvas.drawString(inch, y_position, str(item['item_id']))
                 canvas.drawString(2 * inch, y_position, str(item['material_description']))
                 canvas.drawString(5 * inch, y_position, str(item['quantity']))
 
                 y_position -= 15
-                # Draw inline items as columns with a gap
                 inline_items = item['inline_items']
                 if inline_items:
                     for inline_item in inline_items:
+                        if y_position < inch:
+                            canvas.showPage()
+                            draw_header(canvas)
+                            y_position = height - 3 * inch - 20  # Add extra gap after header on new page
                         x_position = 1.5 * inch
                         canvas.drawString(x_position, y_position, f"S/N: {inline_item['serial_no']}")
                         x_position += 1.5 * inch
                         canvas.drawString(x_position, y_position, f"TAG: {inline_item['tag_no']}")
                         y_position -= 15
 
-                # Draw a dashed line after each item
                 canvas.setDash(3, 3)
                 canvas.line(inch, y_position, width - inch, y_position)
                 canvas.setDash()
                 y_position -= 15
+            return y_position
 
-        # Function to draw PDF
         def draw_pdf():
+            page_number = 1
+            y_position = height - 3 * inch
             draw_header(c)
-            draw_content(c)
-            draw_footer(c, 1)
+            y_position = draw_content(c, y_position)
+            draw_footer(c, page_number)
+
+            while y_position < inch:
+                c.showPage()
+                page_number += 1
+                draw_header(c)
+                y_position = height - 3 * inch
+                y_position = draw_content(c, y_position)
+                draw_footer(c, page_number)
+
             c.showPage()
-            draw_header(c)
-            draw_content(c)
-            draw_footer(c, 2)
 
-        # Drawing the PDF
         draw_pdf()
-
-        # Save the PDF to a file
         media_path = os.path.join(settings.MEDIA_ROOT, "dispatch_export")
         if not os.path.exists(media_path):
             os.makedirs(media_path)
-        file_path = os.path.join(media_path, "dispatch_instruction.pdf")
+        file_path = os.path.join(media_path, "dispatch_instruction_{0}.pdf".format(dil.dil_no))
         c.save()
         with open(file_path, "wb") as file:
             file.write(response.getvalue())
