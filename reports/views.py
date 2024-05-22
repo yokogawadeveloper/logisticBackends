@@ -3,6 +3,7 @@ from dispatch.models import DispatchInstruction, DispatchBillDetails
 from dispatch.serializers import DispatchInstructionSerializer
 from packing.serializers import BoxDetailSerializer
 from .serializers import ExportPDFDispatchSerializer
+from django.template.loader import get_template
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from reportlab.lib.pagesizes import A4
@@ -12,6 +13,8 @@ from django.db.models import Sum
 from packing.models import BoxDetails
 from django.http import HttpResponse
 from django.conf import settings
+from xhtml2pdf import pisa
+from io import BytesIO
 import os
 
 
@@ -132,7 +135,7 @@ class PackingListPDFExport(viewsets.ModelViewSet):
 
         def draw_header(canvas):
             canvas.setFont("Helvetica-Bold", 12)
-            logo_path = os.path.join(settings.MEDIA_ROOT, "dispatch_export", "yokogawa_logo.jpg")
+            logo_path = os.path.join(settings.MEDIA_ROOT, "images", "yokogawa_logo.jpg")
             canvas.drawImage(logo_path, inch, height - inch - 30, width=150, height=30)
             canvas.drawString(6 * inch, height - inch, "Packing List")
             canvas.setFont("Helvetica", 10)
@@ -244,12 +247,51 @@ class PackingListPDFExport(viewsets.ModelViewSet):
             c.showPage()
 
         draw_pdf()
-        media_path = os.path.join(settings.MEDIA_ROOT, "dispatch_export")
+        media_path = os.path.join(settings.MEDIA_ROOT, "packing_export")
         if not os.path.exists(media_path):
             os.makedirs(media_path)
         file_path = os.path.join(media_path, "dispatch_instruction_{0}.pdf".format(dil.dil_no))
         c.save()
         with open(file_path, "wb") as file:
             file.write(response.getvalue())
-
         return response
+
+    @action(detail=False, methods=['post'], url_path='dispatch_instruction_pdf')
+    def dispatch_instruction_pdf(self, request):
+        dil = DispatchInstruction.objects.get(dil_id=request.data['dil_id'])
+        response_data = {
+            'dil_id': dil.dil_id,
+            'dil_no': dil.dil_no,
+            'dil_date': dil.dil_date,
+            'so_no': dil.so_no,
+            'po_no': dil.po_no,
+            'master_list': []
+        }
+        for master_item in dil.master_list.all():
+            master_item_data = {
+                'item_id': master_item.item_id,
+                'item_no': master_item.item_no,
+                'material_description': master_item.material_description,  # corrected field name
+                'material_no': master_item.material_no,
+                'ms_code': master_item.ms_code,
+                'quantity': master_item.quantity,
+                'linkage_no': master_item.linkage_no,
+                'inline_items': []
+            }
+        # Create PDF file
+        html_template = get_template('dispatch_export.html')
+        html = html_template.render({'response_data': response_data})
+        result = BytesIO()
+        pdf = pisa.pisaDocument(BytesIO(html.encode("UTF-8")), result)
+        if not pdf.err:
+            response = HttpResponse(result.getvalue(), content_type='application/pdf')
+            response['Content-Disposition'] = 'attachment; filename="dispatch_instruction.pdf"'
+            # Save the file
+            media_path = os.path.join(settings.MEDIA_ROOT, "dispatch_export")
+            if not os.path.exists(media_path):
+                os.makedirs(media_path)
+            file_path = os.path.join(media_path, "dispatch_instruction_{0}.pdf".format(dil.dil_no))
+            with open(file_path, "wb") as file:
+                file.write(response.getvalue())
+            return response
+        return HttpResponse("Error rendering PDF", status=400)
