@@ -269,6 +269,7 @@ class ItemPackingViewSet(viewsets.ModelViewSet):
     @action(methods=['post'], detail=False, url_path='create_multi_item_packing')
     def create_multi_item_packing(self, request, *args, **kwargs):
         try:
+            update_list = []
             with transaction.atomic():
                 data = request.data
                 random_code = random.randint(1000, 9999)
@@ -295,6 +296,17 @@ class ItemPackingViewSet(viewsets.ModelViewSet):
                             data['box_serial_no'] = 1
                         else:
                             data['box_serial_no'] += count[0]['count']
+
+                    # Updating Boc Details
+                    if data['box_item_flag'] is True:
+                        for index, obj in enumerate(data['box_list']):
+                            model_obj = BoxDetails.objects.get(box_details_id=obj['box_details_id'])
+                            model_obj.parent_box = parent_box  # from main box
+                            model_obj.status = 'packed'
+                            update_list.append(model_obj)
+                        # update the BoxDetails
+                        BoxDetails.objects.bulk_update(update_list, ['parent_box', 'status'])
+
                 else:
                     parent_box = None
                     stature = 'not_packed'
@@ -320,6 +332,7 @@ class ItemPackingViewSet(viewsets.ModelViewSet):
                     length=data['box_length'],
                     breadth=data['box_breadth'],
                     panel_flag=data['panel_flag'],
+                    box_item_flag=data['box_item_flag'],
                     price=data['box_price'],
                     dil_id_id=data['dil_id'],
                     remarks=data['remarks'],
@@ -330,6 +343,7 @@ class ItemPackingViewSet(viewsets.ModelViewSet):
                     net_weight=data['net_weight'],
                     qa_wetness=data['qa_wetness'],
                     project_wetness=data['project_wetness'],
+
                     box_price=price,
                     created_by=request.user
                 )
@@ -383,7 +397,7 @@ class ItemPackingViewSet(viewsets.ModelViewSet):
                         dil_status="Packed ,Ready For Load ",
                         dil_status_no=11, packed_flag=True,
                         packed_date=datetime.datetime.now()
-                        )
+                    )
                 # return serializer data
                 query_set = self.queryset.latest('item_packing_id')
                 serializer = self.serializer_class(query_set, context={'request': request})

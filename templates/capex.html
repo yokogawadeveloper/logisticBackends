@@ -1,0 +1,58 @@
+<!-- create three columns side by side for A4 paper size for pdf generation by using html and css -->
+
+widht of the A4 paper is 210mm and height is 297mm
+so, width of the A4 paper is 8.27 inches and height is 11.69 inches
+1 inch = 96px
+so, width of the A4 paper is 793.92px and height is 1122.24px
+so, width of the A4 paper is 793.92px and height is 1122.24px
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Three Columns A4</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 1000px;
+            /* Adjust max-width as needed */
+            margin: 0 auto;
+            padding: 20px;
+            display: flex;
+        }
+
+        .column {
+            width: 793.92px/3;
+            /* 1/3 of A4 width */
+            padding: 20px;
+            
+
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="column">
+            <h2>Column 1</h2>
+            <p>This is the content of column 1.</p>
+        </div>
+        <div class="column">
+            <h2>Column 2</h2>
+            <p>This is the content of column 2.</p>
+        </div>
+        <div class="column">
+            <h2>Column 3</h2>
+            <p>This is the content of column 3.</p>
+        </div>
+    </div>
+</body>
+
+</html>

@@ -1,5 +1,5 @@
 from django.db import models
-from dispatch.models import DispatchInstruction, MasterItemList ,InlineItemList
+from dispatch.models import DispatchInstruction, MasterItemList, InlineItemList
 from django.contrib.auth import get_user_model
 
 User = get_user_model()
@@ -57,6 +57,7 @@ class BoxDetails(models.Model):
     loaded_date = models.DateTimeField(null=True)
     delivery_flag = models.BooleanField(default=False)
     panel_flag = models.BooleanField(null=True)
+    box_item_flag = models.BooleanField(null=False)
     gross_weight = models.IntegerField(null=True)
     net_weight = models.IntegerField(null=True)
     qa_wetness = models.IntegerField(null=True)
@@ -99,7 +100,8 @@ class ItemPacking(models.Model):
 
 class ItemPackingInline(models.Model):
     item_ref_id = models.ForeignKey(InlineItemList, related_name='inline_list', null=True, on_delete=models.CASCADE)
-    item_pack_id = models.ForeignKey(ItemPacking, related_name='item_packing_inline', null=True, on_delete=models.CASCADE)
+    item_pack_id = models.ForeignKey(ItemPacking, related_name='item_packing_inline', null=True,
+                                     on_delete=models.CASCADE)
     serial_no = models.CharField(max_length=300, null=True, blank=True)
     tag_no = models.CharField(max_length=300, null=True, blank=True)
     # Other fields
@@ -116,7 +118,7 @@ class ItemPackingInline(models.Model):
 
 
 class PackingPrice(models.Model):
-    box_size_id = models.ForeignKey(BoxSize,  null=True, on_delete=models.CASCADE)
+    box_size_id = models.ForeignKey(BoxSize, null=True, on_delete=models.CASCADE)
     location = models.CharField(max_length=300, null=True, blank=True)
     exports_price = models.FloatField(default=0.00, null=True, blank=True)
     domestic_price = models.FloatField(default=0.00, null=True, blank=True)
@@ -135,4 +137,3 @@ class PackingPrice(models.Model):
 
     class Meta:
         db_table = "PackingPrice"
-
