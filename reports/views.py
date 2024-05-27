@@ -625,27 +625,28 @@ class CustomerConsigneeExport(viewsets.ModelViewSet):
     @action(methods=['post'], detail=False, url_path='customer_consignee')
     def customer_consignee(self, request, *args, **kwargs):
         try:
-            dispatch = DispatchInstruction.objects.filter(dil_id=request.data['dil_id'])
-            dispatch_serializer = DispatchInstructionSerializer(dispatch, many=True)
+            # Fetch single DispatchInstruction instance
+            dispatch = DispatchInstruction.objects.get(dil_id=request.data['dil_id'])
+            dispatch_serializer = DispatchInstructionSerializer(dispatch)
+
             delivery_challan = DeliveryChallan.objects.filter(truck_list__id=request.data['truck_list_id']).first()
             dc_invoice = DCInvoiceDetails.objects.filter(delivery_challan=delivery_challan)
             dc_invoice_serializer = DCInvoiceDetailsSerializer(dc_invoice, many=True)
-
-            context = {'data': dispatch_serializer.data}
+            context = {'data': dispatch_serializer.data, 'dc_invoice_data': dc_invoice_serializer.data}
+            return Response(context, status=status.HTTP_200_OK)
             # Create PDF file
-            # Create PDF file
-            html_template = get_template('dispatch_export.html')
-            html = html_template.render({'response_data': response_data})
+            html_template = get_template('customer_consignee.html')
+            html = html_template.render(context)
             result = BytesIO()
             pdf = pisa.pisaDocument(BytesIO(html.encode("UTF-8")), result)
             if not pdf.err:
                 response = HttpResponse(result.getvalue(), content_type='application/pdf')
-                response['Content-Disposition'] = 'attachment; filename="dispatch_instruction.pdf"'
+                response['Content-Disposition'] = 'attachment; filename="customer_consignee.pdf"'
                 # Save the file
                 media_path = os.path.join(settings.MEDIA_ROOT, "dispatch_export")
                 if not os.path.exists(media_path):
                     os.makedirs(media_path)
-                file_path = os.path.join(media_path, "customer_consignee{0}.pdf".format(dil.dil_no))
+                file_path = os.path.join(media_path, "customer_consignee{0}.pdf".format(request.data['dil_id']))
                 with open(file_path, "wb") as file:
                     file.write(response.getvalue())
                 return response

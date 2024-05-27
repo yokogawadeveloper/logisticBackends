@@ -287,6 +287,10 @@ class TruckListViewSet(viewsets.ModelViewSet):
             truck_list_ids = TruckLoadingDetails.objects.filter(dil_id=data['dil_id']).values_list('truck_list_id', )
             truck_list = TruckList.objects.filter(id__in=truck_list_ids)
             serializer = TruckListSerializer(truck_list, many=True)
+            for data in serializer.data:
+                delivery_challan = DeliveryChallan.objects.filter(truck_list=data['id'])
+                delivery_challan_serializer = DeliveryChallanSerializer(delivery_challan.first(), many=False)
+                data['delivery_challan'] = delivery_challan_serializer.data
             return Response(serializer.data, status=status.HTTP_200_OK)
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
