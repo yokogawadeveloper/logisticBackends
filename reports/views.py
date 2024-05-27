@@ -1,18 +1,18 @@
+from rest_framework import viewsets, permissions, status
+from django.template.loader import get_template
+from rest_framework.decorators import action
+from rest_framework.response import Response
 from django.conf import settings
 from django.db.models import Sum
 from django.http import HttpResponse
-from django.template.loader import get_template
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.units import inch
 from reportlab.pdfgen import canvas
-from rest_framework import viewsets, permissions, status
-from rest_framework.decorators import action
-from rest_framework.response import Response
-from dispatch.models import DispatchInstruction, DispatchBillDetails
-from dispatch.serializers import DispatchInstructionSerializer
-from packing.models import BoxDetails
-from packing.serializers import BoxDetailSerializer
-from .serializers import ExportPDFDispatchSerializer
+from packing.serializers import *
+from dispatch.serializers import *
+from packing.models import *
+from tracking.serializers import *
+from .serializers import *
 from xhtml2pdf import pisa
 from io import BytesIO
 import os
@@ -580,3 +580,74 @@ class PackingListPDFExport(viewsets.ModelViewSet):
         response['Content-Disposition'] = 'attachment; filename="dispatch_instruction.pdf"'
         response.write(buffer.getvalue())
         return response
+
+
+class CustomerConsigneeExport(viewsets.ModelViewSet):
+    queryset = TruckLoadingDetails.objects.all()
+    serializer_class = TruckLoadingDetailsSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        query_set = self.queryset.filter(is_active=True)
+        return query_set
+
+    @action(methods=['post'], detail=False, url_path='annexure_delivery_challan')
+    def annexure_delivery_challan(self, request, *args, **kwargs):
+        try:
+            loading_details = self.queryset.filter(truck_list_id=request.data['truck_list_id']).values_list('box_code')
+            item_packing = ItemPacking.objects.filter(box_code__in=loading_details).values_list('item_ref_id')
+            master_list = MasterItemList.objects.filter(item_id__in=item_packing)
+            item_serializer = MasterItemListSerializer(master_list, many=True)
+            # Delivery Challan
+            delivery_challan = DeliveryChallan.objects.filter(truck_list=request.data['truck_list_id'])
+            challan_serializer = DeliveryChallanSerializer(delivery_challan, many=True)
+            context = {'item_data': item_serializer.data, 'delivery_challan': challan_serializer.data}
+            # Create PDF file
+            html_template = get_template('annexure_delivery_challan.html')
+            html = html_template.render(context)
+            result = BytesIO()
+            pdf = pisa.pisaDocument(BytesIO(html.encode("UTF-8")), result)
+            if not pdf.err:
+                response = HttpResponse(result.getvalue(), content_type='application/pdf')
+                response['Content-Disposition'] = 'attachment; filename="annexure_delivery_challan.pdf"'
+                media_path = os.path.join(settings.MEDIA_ROOT, "dispatch_export")
+                if not os.path.exists(media_path):
+                    os.makedirs(media_path)
+                file_path = os.path.join(media_path,
+                                         "annexure_delivery_challan{0}.pdf".format(request.data['truck_list_id']))
+                with open(file_path, "wb") as file:
+                    file.write(response.getvalue())
+                return response
+            return HttpResponse("Error rendering PDF", status=400)
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+    @action(methods=['post'], detail=False, url_path='customer_consignee')
+    def customer_consignee(self, request, *args, **kwargs):
+        try:
+            dispatch = DispatchInstruction.objects.filter(dil_id=request.data['dil_id'])
+            dispatch_serializer = DispatchInstructionSerializer(dispatch, many=True)
+            delivery_challan = DeliveryChallan.objects.filter(truck_list__id=request.data['truck_list_id']).first()
+            dc_invoice = DCInvoiceDetails.objects.filter(delivery_challan=delivery_challan)
+            dc_invoice_serializer = DCInvoiceDetailsSerializer(dc_invoice, many=True)
+
+            context = {'data': dispatch_serializer.data}
+            # Create PDF file
+            html_template = get_template('customer_consignee.html')
+            html = html_template.render(context)
+            result = BytesIO()
+            pdf = pisa.pisaDocument(BytesIO(html.encode("UTF-8")), result)
+            if not pdf.err:
+                response = HttpResponse(result.getvalue(), content_type='application/pdf')
+                response['Content-Disposition'] = 'attachment; filename="customer_consignee.pdf"'
+                media_path = os.path.join(settings.MEDIA_ROOT, "dispatch_export")
+                if not os.path.exists(media_path):
+                    os.makedirs(media_path)
+                file_path = os.path.join(media_path,
+                                         "customer_consignee{0}.pdf".format(request.data['truck_list_id']))
+                with open(file_path, "wb") as file:
+                    file.write(response.getvalue())
+                return response
+            return HttpResponse("Error rendering PDF", status=400)
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)

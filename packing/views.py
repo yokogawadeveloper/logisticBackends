@@ -155,13 +155,12 @@ class BoxDetailViewSet(viewsets.ModelViewSet):
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
     @action(methods=['post'], detail=False, url_path='filter_packed_box')
-    def filter_queryset(self, request, *args, **kwargs):
+    def filter_packed_box(self, request, *args, **kwargs):
         data = request.data
         if data['main_box'] == 'ALL':
             filter_data = self.get_queryset()
         else:
-            filter_data = self.get_queryset().filter(dil_id=data['dil_id'], main_box=data['main_box'],
-                                                     status=data['status'])
+            filter_data = self.get_queryset().filter(dil_id=data['dil_id'], main_box=data['main_box'],status=data['status'])
         serializer = BoxDetailSerializer(filter_data, many=True, context={'request': request})
         serialize_data = serializer.data
         return Response({'data': serialize_data})
@@ -195,23 +194,31 @@ class BoxDetailViewSet(viewsets.ModelViewSet):
     def box_details_code_filter(self, request, *args, **kwargs):
         try:
             data = request.data
-            filter_data = BoxDetails.objects.filter(parent_box=data['box_code'], main_box=False).values_list('box_code',
-                                                                                                             flat=True)
+            filter_data = BoxDetails.objects.filter(parent_box=data['box_code'], main_box=False).values_list('box_code',flat=True)
             box_data = BoxDetails.objects.filter(box_code__in=filter_data)
-            item_data = ItemPacking.objects.filter(box_code__in=filter_data)
+            item_packing_data = ItemPacking.objects.filter(box_code__in=filter_data)
             # serializer for box details
-            serializer = BoxDetailSerializer(box_data, many=True, context={'request': request})
-            box_serializer_data = serializer.data
+            box_serializer = BoxDetailSerializer(box_data, many=True, context={'request': request})
+            box_serializer_data = box_serializer.data
             # serializer for item packing
-            serializer = ItemPackingSerializer(item_data, many=True, context={'request': request})
-            item_serializer_data = serializer.data
+            item_packing_serializer = ItemPackingSerializer(item_packing_data, many=True, context={'request': request})
+            item_serializer_data = item_packing_serializer.data
+            # for box details if box_item_flag
+            new_box_details = BoxDetails.objects.filter(box_code=data['box_code'], box_item_flag=True).values_list(
+                'box_code', flat=True)
+            new_item_packing_data = ItemPacking.objects.filter(box_code__in=new_box_details)
+            new_item_packing_serializer = ItemPackingSerializer(new_item_packing_data, many=True,
+                                                                context={'request': request})
+
             item_list = []
             for box in box_serializer_data:
                 for item in item_serializer_data:
                     if box['box_code'] == item['box_code']:
                         item_list.append(item)
                 box['item_list'] = item_list
-            return Response({'box_data': box_serializer_data})
+
+            return Response({'box_data': box_serializer_data, 'new_item_packing': new_item_packing_serializer.data},
+                            status=status.HTTP_200_OK)
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -230,8 +237,7 @@ class BoxDetailViewSet(viewsets.ModelViewSet):
     def box_details_for_loading(self, request, *args, **kwargs):
         try:
             data = request.data
-            filter_data = self.get_queryset().filter(dil_id=data['dil_id'], main_box=True, loaded_flag=False,
-                                                     status='packed')
+            filter_data = self.get_queryset().filter(dil_id=data['dil_id'], main_box=True, loaded_flag=False,status='packed')
             serializer = BoxDetailSerializer(filter_data, many=True, context={'request': request})
             serialize_data = serializer.data
             return Response({'data': serialize_data})

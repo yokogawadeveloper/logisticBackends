@@ -369,15 +369,27 @@ class TruckLoadingDetailsViewSet(viewsets.ModelViewSet):
     @action(methods=['post'], detail=False, url_path='create_loading_details')
     def create_loading_details(self, request):
         try:
+            data = request.data
+            box_list = data['box_list']
+            dil_id = data['dil_id']
+            truck_list_id = data['truck_list_id']
+            vehicle_no = data['vehicle_no']
+            driver_name = data['driver_name']
+            driver_no = data['driver_no']
+            remarks = data['remarks']
             with transaction.atomic():
-                data = request.data
-                box_list = data['box_list']
-                dil_id = data['dil_id']
-                truck_list_id = data['truck_list_id']
-                vehicle_no = data['vehicle_no']
-                driver_name = data['driver_name']
-                driver_no = data['driver_no']
-                remarks = data['remarks']
+                if data['courier_flag'] is True:
+                    truck_request = TruckRequest.objects.create(transporter=data['transporter'])
+                    truck_request_type = TruckRequestTypesList.objects.create(truck_request=truck_request,truck_type__id=4, truck_count=1)
+                    truck_list = TruckList.objects.create(
+                        truck_type__id=4,
+                        transportation__id=data['transporter'],
+                        truck_request=truck_request,
+                        truck_request_types_list=truck_request_type,
+                        created_by=request.user, updated_by=request.user
+                    )
+                    truck_list_id = truck_list.id
+                # Main Logic
                 truck_list = TruckList.objects.filter(id=truck_list_id)
                 dispatch = DispatchInstruction.objects.filter(dil_id=dil_id)
                 if truck_list.exists():
@@ -410,7 +422,7 @@ class TruckLoadingDetailsViewSet(viewsets.ModelViewSet):
                     # Update truck list status & Dispatch status
                     dispatch = DispatchInstruction.objects.filter(dil_id=dil_id)
                     dispatch.filter(dil_status_no__in=[11, 12, 13]).update(
-                        dil_status_no=15,
+                        dil_status_no=14,
                         dil_status='Loaded',
                         loaded_flag=True,
                         loaded_date=datetime.datetime.now()

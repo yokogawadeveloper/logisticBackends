@@ -72,3 +72,4 @@ router.register('delivery_challan', DeliveryChallanViewSet, basename='delivery_c
 router.register('dispatch_report', DispatchReportViewSet, basename='dispatch_report')
 router.register('box_details_report', BoxDetailsReportViewSet, basename='box_details_report')
 router.register('packing_list_pdf_export', PackingListPDFExport, basename='packing_list_pdf_export')
+router.register('customer_consignee_export', CustomerConsigneeExport, basename='customer_consignee_export')
