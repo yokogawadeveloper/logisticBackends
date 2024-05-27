@@ -632,8 +632,7 @@ class CustomerConsigneeExport(viewsets.ModelViewSet):
             delivery_challan = DeliveryChallan.objects.filter(truck_list__id=request.data['truck_list_id']).first()
             dc_invoice = DCInvoiceDetails.objects.filter(delivery_challan=delivery_challan)
             dc_invoice_serializer = DCInvoiceDetailsSerializer(dc_invoice, many=True)
-            context = {'data': dispatch_serializer.data, 'dc_invoice_data': dc_invoice_serializer.data}
-            return Response(context, status=status.HTTP_200_OK)
+            context = {'dispatch_data': dispatch_serializer.data, 'dc_invoice_data': dc_invoice_serializer.data}
             # Create PDF file
             html_template = get_template('customer_consignee.html')
             html = html_template.render(context)

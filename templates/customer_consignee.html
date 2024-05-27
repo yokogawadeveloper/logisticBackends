@@ -22,9 +22,11 @@
         </tr>
         <tr>
             <td colspan="7" style="text-align:left;font-size:16px;font-family:Arial;color:blue;"><b>
-                <p style="line-height:0px">YOKOGAWA INDIA LIMITED</p></b>
+                    <p style="line-height:0px">YOKOGAWA INDIA LIMITED</p>
+                </b>
                 <p style="line-height:0px;font-family:Arial;color:blue;font-size:14px;">PLOT NO.96,</p>
-                <p style="line-height:0px;font-family:Arial;color:blue;font-size:14px;">ELECTRONIC CITY COMPLEX,HOSUR ROAD BANGLORE - 560100.</p>
+                <p style="line-height:0px;font-family:Arial;color:blue;font-size:14px;">ELECTRONIC CITY COMPLEX,HOSUR
+                    ROAD BANGLORE - 560100.</p>
                 <p style="line-height:0px;font-family:Arial;color:blue;font-size:14px;">TEL NO: 91(080) 41586000.</p>
                 <P style="line-height:0px;font-family:Arial;color:blue;font-size:14px;"> email:
                     Yil-logistics@yokogawa.com</P>
@@ -50,13 +52,14 @@
         <!-- ship to details  -->
         <tr>
             <td colspan="3" style="text-align:left;font-family:Arial;font-size:14px;"><b>TO:</b>
-                {% if ship_to_customer_name == None %}
+                {% if dispatch_data.ship_to_party_name == None %}
                 <p style="font-family:Calibri;font-size:15px;"> {{ship_to}}</p>
                 {% endif %}
 
-                {% if ship_to_customer_name != None %}
+                {% if dispatch_data.ship_to_party_name != None %}
                 <p style="font-family:Calibri;font-size:15px;">
-                    {% if ship_to_customer_name == None %} {% else %} {{ship_to_customer_name}},<br />{% endif %}
+                    {% if dispatch_data.ship_to_party_name == None %} {% else %}
+                    {{dispatch_data.ship_to_party_name}},<br />{% endif %}
                     {% if ship_to_street1 == None %} {% else %} {{ship_to_street1}},<br /> {% endif %}
                     {% if ship_to_street2 == None %} {% else %} {{ship_to_street2}},<br /> {% endif %}
                     {% if ship_to_city == None %} {% else %} {{ship_to_city}},<br /> {% endif %}
@@ -108,10 +111,12 @@
         </tr>
 
         <tr>
-            <td colspan="10" style="text-align:left;font-family:Arial;font-size:14px;"><b>Ref.:P O Number: </b>{% if
-                PONO == None %} - {% else %} {{PONO}} {% endif %} DATE: {% if po_date == None %} - {% else %}
-                {{po_date}} {% endif %}</td>
+            <td colspan="10" style="text-align:left;font-family:Arial;font-size:14px;"><b>
+                    Ref.:P O Number: </b>{% if PONO == None %} - {% else %} {{PONO}} {% endif %}
+                DATE: {% if po_date == None %} - {% else %} {{po_date}} {% endif %}
+            </td>
         </tr>
+
         <tr>
             <td colspan="10" style="text-align:left;font-family:Arial;font-size:14px;"><b>Sub: </b>Despatch of
                 Consignement S.O No ( {% if SONO == None %} - {% else %} {{SONO}} {% endif %} )</td>
@@ -177,27 +182,13 @@
         <tbody>
             {% for data in challanData %}
             <tr>
-                <td colspan="1" style='text-align: center;border:solid 1px;font-family:Arial;font-size:14px;'>{% if
-                    data.inv_no == None %} - {% else %} {{data.inv_no}} {% endif %}</td>
-                <td colspan="2" style='text-align: center;border:solid 1px;font-family:Arial;font-size:14px;'>{% if
-                    data.inv_date == None %} - {% else %} {{data.inv_date}} {% endif %}</td>
-                <td colspan="1" style='text-align: center;border:solid 1px;font-family:Arial;font-size:14px;'>{% if
-                    data.inv_amount == None %} - {% else %} {{data.inv_amount}} {% endif %}</td>
-                <td colspan="1" style='text-align: center;border:solid 1px;font-family:Arial;font-size:14px;'>{% if
-                    data.challen_no == None %} - {% else %} {{data.challen_no}} {% endif %}</td>
-                <td colspan="1" style='text-align: center;border:solid 1px;font-family:Arial;font-size:14px;'>{% if
-                    data.truck_amount == None %} - {% else %} {{data.truck_amount}} {% endif %}</td>
-                <td colspan="1" style='text-align: center;border:solid 1px;font-family:Arial;font-size:14px;'>{% if
-                    data.lrn_no == None %} - {% else %} {{data.lrn_no}} {% endif %}/{% if data.lrn_date == None %} - {%
-                    else %} {{data.lrn_date}} {% endif %}</td>
-                <td colspan="1" style='text-align: center;border:solid 1px;font-family:Arial;font-size:14px;'>{% if
-                    data.truckNo == None %} - {% else %} {{data.truckNo}} {% endif %}/{% if data.truckType == None %} -
-                    {% else %} {{data.truckType}} {% endif %}</td>
-                <td colspan="1" style='text-align: center;border:solid 1px;font-family:Arial;font-size:14px;'>{% if
-                    data.qty == None %} - {% else %} {{data.qty}} {% endif %}</td>
-                <td colspan="1" style='text-align: center;border:solid 1px;font-family:sans-serif;'>PKG</td>
-                <td colspan="1" style='text-align: center;border:solid 1px;font-family:Arial;font-size:14px;'>{% if
-                    data.eway_bill_no == None %} - {% else %} {{data.eway_bill_no}} {% endif %}</td>
+                <td colspan="1" style='text-align: center;border:solid 1px;font-family:Arial;font-size:14px;'>
+                    {% if data.inv_no == None %} - {% else %} {{data.inv_no}} {% endif %}
+                </td>
+                <td colspan="2" style='text-align: center;border:solid 1px;font-family:Arial;font-size:14px;'>
+                    {% if data.inv_date == None %} - {% else %} {{data.inv_date}} {% endif %}
+                </td>
+
             </tr>
             {% endfor %}
         </tbody>

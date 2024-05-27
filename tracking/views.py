@@ -384,8 +384,10 @@ class TruckLoadingDetailsViewSet(viewsets.ModelViewSet):
             with transaction.atomic():
                 if data['courier_flag'] is True:
                     transporter = TrackingTransportation.objects.get(id=data['transporter'])
-                    truck_request = TruckRequest.objects.create(transporter=transporter, status='Loaded',remarks=remarks)
-                    truck_request_type = TruckRequestTypesList.objects.create(truck_request=truck_request,truck_type_id=4, truck_count=1)
+                    truck_request = TruckRequest.objects.create(transporter=transporter, status='Loaded',
+                                                                remarks=remarks)
+                    truck_request_type = TruckRequestTypesList.objects.create(truck_request=truck_request,
+                                                                              truck_type_id=4, truck_count=1)
                     truck_list = TruckList.objects.create(
                         truck_type_id=4,
                         transportation=transporter,
@@ -435,6 +437,21 @@ class TruckLoadingDetailsViewSet(viewsets.ModelViewSet):
                 else:
                     return Response({'error': 'Truck list not found'}, status=status.HTTP_400_BAD_REQUEST)
                 return Response({'message': 'loading details created successfully'}, status=status.HTTP_201_CREATED)
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+    @action(methods=['post'], detail=False, url_path='loading_details_on_truck_list_id')
+    def loading_details_on_truck_list_id(self, request):
+        try:
+            data = request.data
+            truck_list_id = data['truck_list_id']
+            truck_list = TruckList.objects.filter(id=truck_list_id)
+            if truck_list.exists():
+                loading_details = TruckLoadingDetails.objects.filter(truck_list_id=truck_list_id)
+                serializer = TruckLoadingDetailsSerializer(loading_details, many=True)
+                return Response(serializer.data, status=status.HTTP_200_OK)
+            else:
+                return Response({'error': 'Truck list not found'}, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
