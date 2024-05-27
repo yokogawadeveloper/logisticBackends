@@ -58,13 +58,9 @@
 
                 {% if dispatch_data.ship_to_party_name != None %}
                 <p style="font-family:Calibri;font-size:15px;">
-                    {% if dispatch_data.ship_to_party_name == None %} {% else %}
-                    {{dispatch_data.ship_to_party_name}},<br />{% endif %}
-                    {% if ship_to_street1 == None %} {% else %} {{ship_to_street1}},<br /> {% endif %}
-                    {% if ship_to_street2 == None %} {% else %} {{ship_to_street2}},<br /> {% endif %}
-                    {% if ship_to_city == None %} {% else %} {{ship_to_city}},<br /> {% endif %}
-                    {% if ship_to_postal_code == None %} {% else %} {{ship_to_postal_code}} - {% endif %}
-                    {% if ship_to_country_name == None %} {% else %} {{ship_to_country_name}} {% endif %}
+                    <span>{% if dispatch_data.ship_to_party_name == None %} - {% else %} {{dispatch_data.ship_to_party_name}} {% endif %}</span><br />
+                    <span>{% if dispatch_data.ship_to_street1 == None %} - {% else %} {{dispatch_data.ship_to_street1}} {% endif %}</span><br />
+                    
                 </p>
                 {% endif %}
             </td>
@@ -214,44 +210,52 @@
 
         <tr>
             <td colspan="5" style="text-align:left;font-family:Arial;font-size:14px;"><b>DESCRIPTION OF GOODS:</b></td>
-            <td colspan="5" style="text-align:left;font-family:Arial;font-size:14px;"><span>{% if descOfGoods == None %}
-                    - {% else %} {{descOfGoods}} {% endif %}</span></td>
+            <td colspan="5" style="text-align:left;font-family:Arial;font-size:14px;">
+                <span>{% if descOfGoods == None %} - {% else %} {{descOfGoods}} {% endif %}</span>
+            </td>
         </tr>
         <tr>
             <td colspan="5" style="text-align:left;font-family:Arial;font-size:14px;"><b>TRANSPORTER NAME</b></td>
-            <td colspan="5" style="text-align:left;font-family:Arial;font-size:14px;">{% if TransporterName == None %} -
-                {% else %} {{TransporterName}} {% endif %}</td>
+            <td colspan="5" style="text-align:left;font-family:Arial;font-size:14px;">
+                {% if TransporterName == None %} - {% else %} {{TransporterName}} {% endif %}
+            </td>
         </tr>
         <tr>
             <td colspan="5" style="text-align:left;font-family:Arial;font-size:14px;"><b>TRANSPORTATION MODE</b></td>
-            <td colspan="5" style="text-align:left;font-family:Arial;font-size:14px;">{% if mode_of_transport == None %}
-                - {% else %} {{mode_of_transport}} {% endif %}</td>
+            <td colspan="5" style="text-align:left;font-family:Arial;font-size:14px;">
+                {% if mode_of_transport == None %} - {% else %} {{mode_of_transport}} {% endif %}
+            </td>
         </tr>
         <tr>
             <td colspan="5" style="text-align:left;font-family:Arial;font-size:14px;"><b>MODE OF DELIVERY:</b></td>
-            <td colspan="5" style="text-align:left;font-family:Arial;font-size:14px;">{% if deliveryMode == None %} - {%
-                else %} {{deliveryMode}} {% endif %}</td>
+            <td colspan="5" style="text-align:left;font-family:Arial;font-size:14px;">
+                {% if deliveryMode == None %} - {% else %} {{deliveryMode}} {% endif %}
+            </td>
         </tr>
         <tr>
             <td colspan="5" style="text-align:left;font-family:Arial;font-size:14px;"><b>FREIGHT MODE:</b></td>
-            <td colspan="5" style="text-align:left;font-family:Arial;font-size:14px;">{% if freightMode == None %} - {%
-                else %} {{freightMode}} {% endif %}</td>
+            <td colspan="5" style="text-align:left;font-family:Arial;font-size:14px;">
+                {% if freightMode == None %} - {% else %} {{freightMode}} {% endif %}
+            </td>
         </tr>
         <tr>
             <td colspan="5" style="text-align:left;font-family:Arial;font-size:14px;"><b>DESTINATION:</b></td>
-            <td colspan="5" style="text-align:left;font-family:Arial;font-size:14px;">{% if Destination == None %} - {%
-                else %} {{Destination}} {% endif %}</td>
+            <td colspan="5" style="text-align:left;font-family:Arial;font-size:14px;">
+                {% if Destination == None %} - {% else %} {{Destination}} {% endif %}
+            </td>
         </tr>
         <tr>
             <td colspan="5" style="text-align:left;font-family:Arial;font-size:14px;"><b>TOTAL CONSIGNMENT VALUE:</b>
             </td>
-            <td colspan="5" style="text-align:left;font-family:Arial;font-size:14px;">INR. {% if consignmentValue ==
-                None %} - {% else %} {{consignmentValue}} {% endif %}</td>
+            <td colspan="5" style="text-align:left;font-family:Arial;font-size:14px;">
+                INR. {% if consignmentValue == None %} - {% else %} {{consignmentValue}} {% endif %}
+            </td>
         </tr>
         <tr>
             <td colspan="5" style="text-align:left;font-family:Arial;font-size:14px;"><b>REMARKS:</b></td>
-            <td colspan="5" style="text-align:left;padding-bottom:14px;font-family:Arial;font-size:14px;">{% if
-                truckReqRemarks == None %} - {% else %} {{truckReqRemarks}} {% endif %}</td>
+            <td colspan="5" style="text-align:left;padding-bottom:14px;font-family:Arial;font-size:14px;">
+                {% if truckReqRemarks == None %} - {% else %} {{truckReqRemarks}} {% endif %}
+            </td>
         </tr>
 
         <tr>
@@ -261,8 +265,10 @@
 
         <tr>
             <td colspan="5" style="text-align:left;font-family:Arial;font-size:14px;">
-                <p>Transit insurance is covered from {% if InsuranceScope == None %} - {% else %} {{InsuranceScope}} {%
-                    endif %}.</p>
+                <p>
+                    Transit insurance is covered from :
+                    {% if InsuranceScope == None %} - {% else %} {{InsuranceScope}} {% endif %}.
+                </p>
             </td>
             <td colspan="5"></td>
         </tr>
@@ -271,8 +277,10 @@
             <td colspan="5" style="text-align:left;font-size:14px;"></td>
         </tr>
         <tr>
-            <td colspan="10" style="text-align:left;font-family:Arial;font-size:14px;"><b>{% if regards == None %} - {%
-                    else %} {{regards}} {% endif %}</b></td>
+            <td colspan="10" style="text-align:left;font-family:Arial;font-size:14px;">
+                <b>{% if regards == None %} - {% else %} {{regards}} {% endif %}
+                </b>
+            </td>
         </tr>
     </table>
 </body>

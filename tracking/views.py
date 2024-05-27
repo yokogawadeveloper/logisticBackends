@@ -2,7 +2,7 @@ from rest_framework import permissions, viewsets, status
 from rest_framework.response import Response
 from rest_framework.decorators import action
 from django.db import transaction
-from packing.models import BoxDetails
+from packing.serializers import *
 from .serializers import *
 import datetime
 
@@ -449,6 +449,10 @@ class TruckLoadingDetailsViewSet(viewsets.ModelViewSet):
             if truck_list.exists():
                 loading_details = TruckLoadingDetails.objects.filter(truck_list_id=truck_list_id)
                 serializer = TruckLoadingDetailsSerializer(loading_details, many=True)
+                for data in serializer.data:
+                    box_details = BoxDetails.objects.filter(box_code=data['box_code'])
+                    box_details_serializer = BoxDetailSerializer(box_details, many=True)
+                    data['box_details'] = box_details_serializer.data
                 return Response(serializer.data, status=status.HTTP_200_OK)
             else:
                 return Response({'error': 'Truck list not found'}, status=status.HTTP_400_BAD_REQUEST)
