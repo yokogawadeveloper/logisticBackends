@@ -633,18 +633,19 @@ class CustomerConsigneeExport(viewsets.ModelViewSet):
 
             context = {'data': dispatch_serializer.data}
             # Create PDF file
-            html_template = get_template('customer_consignee.html')
-            html = html_template.render(context)
+            # Create PDF file
+            html_template = get_template('dispatch_export.html')
+            html = html_template.render({'response_data': response_data})
             result = BytesIO()
             pdf = pisa.pisaDocument(BytesIO(html.encode("UTF-8")), result)
             if not pdf.err:
                 response = HttpResponse(result.getvalue(), content_type='application/pdf')
-                response['Content-Disposition'] = 'attachment; filename="customer_consignee.pdf"'
+                response['Content-Disposition'] = 'attachment; filename="dispatch_instruction.pdf"'
+                # Save the file
                 media_path = os.path.join(settings.MEDIA_ROOT, "dispatch_export")
                 if not os.path.exists(media_path):
                     os.makedirs(media_path)
-                file_path = os.path.join(media_path,
-                                         "customer_consignee{0}.pdf".format(request.data['truck_list_id']))
+                file_path = os.path.join(media_path, "customer_consignee{0}.pdf".format(dil.dil_no))
                 with open(file_path, "wb") as file:
                     file.write(response.getvalue())
                 return response

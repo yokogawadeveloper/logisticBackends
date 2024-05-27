@@ -39,10 +39,10 @@ class TrackingTransportation(models.Model):
 
 class TruckRequest(models.Model):
     transporter = models.ForeignKey(TrackingTransportation, on_delete=models.CASCADE)
-    state = models.ForeignKey(State, on_delete=models.CASCADE)
-    district = models.ForeignKey(District, on_delete=models.CASCADE)
-    taluk = models.ForeignKey(Taluk, on_delete=models.CASCADE)
-    pincode = models.IntegerField()
+    state = models.ForeignKey(State, on_delete=models.CASCADE, null=True)
+    district = models.ForeignKey(District, on_delete=models.CASCADE, null=True)
+    taluk = models.ForeignKey(Taluk, on_delete=models.CASCADE, null=True)
+    pincode = models.IntegerField(null=True, blank=True)
     status = models.CharField(max_length=100, null=True)
     remarks = models.TextField(null=True)
     # other fields

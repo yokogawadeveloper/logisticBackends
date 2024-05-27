@@ -379,11 +379,12 @@ class TruckLoadingDetailsViewSet(viewsets.ModelViewSet):
             remarks = data['remarks']
             with transaction.atomic():
                 if data['courier_flag'] is True:
-                    truck_request = TruckRequest.objects.create(transporter=data['transporter'])
-                    truck_request_type = TruckRequestTypesList.objects.create(truck_request=truck_request,truck_type__id=4, truck_count=1)
+                    transporter = TrackingTransportation.objects.get(id=data['transporter'])
+                    truck_request = TruckRequest.objects.create(transporter=transporter, status='Loaded',remarks=remarks)
+                    truck_request_type = TruckRequestTypesList.objects.create(truck_request=truck_request,truck_type_id=4, truck_count=1)
                     truck_list = TruckList.objects.create(
-                        truck_type__id=4,
-                        transportation__id=data['transporter'],
+                        truck_type_id=4,
+                        transportation=transporter,
                         truck_request=truck_request,
                         truck_request_types_list=truck_request_type,
                         created_by=request.user, updated_by=request.user
