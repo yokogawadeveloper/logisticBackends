@@ -71,6 +71,7 @@ class BoxDetailsReportViewSet(viewsets.ModelViewSet):
             date_flag = request.data['date_flag']
             date_from = request.data['date_from']
             date_to = request.data['date_to']
+            main_box= request.data['main_box']
             # Combine filters for DispatchInstruction
             dispatch_filters = {**filter_data}
             if date_flag and date_type != 'box_created_date':
@@ -78,10 +79,9 @@ class BoxDetailsReportViewSet(viewsets.ModelViewSet):
             dispatch = DispatchInstruction.objects.filter(**dispatch_filters)
             # Get the box details
             if date_flag and date_type == 'box_created_date':
-                box_details = BoxDetails.objects.filter(dil_id__in=dispatch).filter(
-                    created_at__range=[date_from, date_to], main_box=True)
+                box_details = BoxDetails.objects.filter(dil_id__in=dispatch).filter(created_at__range=[date_from, date_to], main_box=main_box)
             else:
-                box_details = BoxDetails.objects.filter(dil_id__in=dispatch, main_box=True)
+                box_details = BoxDetails.objects.filter(dil_id__in=dispatch, main_box=main_box)
             # Serialize the data
             serializer = BoxDetailSerializer(box_details, many=True)
             return Response(serializer.data, status=status.HTTP_200_OK)
