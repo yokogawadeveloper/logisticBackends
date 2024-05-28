@@ -100,8 +100,7 @@ class ItemPacking(models.Model):
 
 class ItemPackingInline(models.Model):
     item_ref_id = models.ForeignKey(InlineItemList, related_name='inline_list', null=True, on_delete=models.CASCADE)
-    item_pack_id = models.ForeignKey(ItemPacking, related_name='item_packing_inline', null=True,
-                                     on_delete=models.CASCADE)
+    item_pack_id = models.ForeignKey(ItemPacking, related_name='item_packing_inline', null=True,on_delete=models.CASCADE)
     serial_no = models.CharField(max_length=300, null=True, blank=True)
     tag_no = models.CharField(max_length=300, null=True, blank=True)
     # Other fields

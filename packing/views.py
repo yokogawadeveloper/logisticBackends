@@ -4,6 +4,7 @@ from rest_framework import permissions, status
 from rest_framework import viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
+from django.db.models import F, Sum
 from .serializers import *
 from .models import *
 import random
@@ -160,7 +161,8 @@ class BoxDetailViewSet(viewsets.ModelViewSet):
         if data['main_box'] == 'ALL':
             filter_data = self.get_queryset()
         else:
-            filter_data = self.get_queryset().filter(dil_id=data['dil_id'], main_box=data['main_box'],status=data['status'])
+            filter_data = self.get_queryset().filter(dil_id=data['dil_id'], main_box=data['main_box'],
+                                                     status=data['status'])
         serializer = BoxDetailSerializer(filter_data, many=True, context={'request': request})
         serialize_data = serializer.data
         return Response({'data': serialize_data})
@@ -204,11 +206,9 @@ class BoxDetailViewSet(viewsets.ModelViewSet):
             item_packing_serializer = ItemPackingSerializer(item_packing_data, many=True, context={'request': request})
             item_serializer_data = item_packing_serializer.data
             # for box details if box_item_flag
-            new_box_details = BoxDetails.objects.filter(box_code=data['box_code'], box_item_flag=True).values_list(
-                'box_code', flat=True)
+            new_box_details = BoxDetails.objects.filter(box_code=data['box_code'], box_item_flag=True).values_list('box_code', flat=True)
             new_item_packing_data = ItemPacking.objects.filter(box_code__in=new_box_details)
-            new_item_packing_serializer = ItemPackingSerializer(new_item_packing_data, many=True,
-                                                                context={'request': request})
+            new_item_packing_serializer = ItemPackingSerializer(new_item_packing_data, many=True, context={'request': request})
 
             item_list = []
             for box in box_serializer_data:
@@ -237,7 +237,8 @@ class BoxDetailViewSet(viewsets.ModelViewSet):
     def box_details_for_loading(self, request, *args, **kwargs):
         try:
             data = request.data
-            filter_data = self.get_queryset().filter(dil_id=data['dil_id'], main_box=True, loaded_flag=False,status='packed')
+            filter_data = self.get_queryset().filter(dil_id=data['dil_id'], main_box=True, loaded_flag=False,
+                                                     status='packed')
             serializer = BoxDetailSerializer(filter_data, many=True, context={'request': request})
             serialize_data = serializer.data
             return Response({'data': serialize_data})
@@ -414,12 +415,30 @@ class ItemPackingViewSet(viewsets.ModelViewSet):
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
     @action(methods=['post'], detail=False, url_path='item_packing_code_filter')
-    def item_packing_code_filter(self, request):
+    def item_packing_code_filter(self, request, *args, **kwargs):
         try:
             data = request.data
             filter_data = self.get_queryset().filter(box_code=data['box_code'])
             serializer = self.serializer_class(filter_data, many=True, context={'request': request})
             serializer_data = serializer.data
             return Response({'data': serializer_data}, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+    @action(methods=['post'], detail=False, url_path='item_packing_progress')
+    def item_packing_progress(self, request, *args, **kwargs):
+        try:
+            with transaction.atomic():
+                request_data = request.data
+                item_packing = ItemPacking.objects.filter(box_code=request_data['box_code'])
+                for item in item_packing:
+                    master_item_list = MasterItemList.objects.filter(item_id=item.item_ref_id_id)
+                    master_item_list.update(packed_quantity=F('packed_quantity') - item.item_qty)
+                    ItemPackingInline.objects.filter(item_pack_id=item.item_packing_id).delete()
+                    ItemPacking.objects.filter(item_packing_id=item.item_packing_id).delete()
+                BoxDetails.objects.filter(box_code=request_data['box_code']).delete()
+                dispatch = DispatchInstruction.objects.filter(dil_id=request_data['dil_id'])
+                dispatch.update(dil_status="packing in processed successfully", dil_status_no=10)
+                return Response({'message': 'Item Packing Progressed'}, status=status.HTTP_200_OK)
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
