@@ -315,14 +315,31 @@ class TruckListViewSet(viewsets.ModelViewSet):
 
     @action(methods=['post'], detail=False, url_path='dynamic_dil_or_truck_list')
     def dynamic_dil_or_truck_list(self, request):
+        global truck_list
         try:
             dispatch_filter = request.data['dispatch_filter']
             truck_filter = request.data['truck_filter']
+            date_flag = request.data['date_flag']
+            date_type = request.data['date_type']
+            date_from = request.data['date_from']
+            date_to = request.data['date_to']
             if dispatch_filter and truck_filter:
-                dispatch = DispatchInstruction.objects.filter(**dispatch_filter)
-                loading = TruckLoadingDetails.objects.filter(dil_id__in=dispatch.values_list('dil_id', flat=True))
-                truck_list = TruckList.objects.filter(id__in=loading.values_list('truck_list_id', flat=True),
-                                                      **truck_filter)
+                if date_flag:
+                    if date_type == "submitted_date":
+                        dispatch = DispatchInstruction.objects.filter(**dispatch_filter,submitted_date__range=[date_from, date_to])
+                        loading = TruckLoadingDetails.objects.filter(dil_id__in=dispatch.values_list('dil_id', flat=True))
+                        truck_list = TruckList.objects.filter(id__in=loading.values_list('truck_list_id', flat=True),**truck_filter)
+                    else:
+                        columns_search = date_type+'__range'
+                        dispatch = DispatchInstruction.objects.filter(**dispatch_filter).values_list('dil_id', flat=True)
+                        loading = TruckLoadingDetails.objects.filter(dil_id__in=dispatch).values_list('truck_list_id', flat=True)
+                        truck_list = TruckList.objects.filter(id__in=loading, **truck_filter, **{columns_search: [date_from, date_to]})
+                else:
+                    dispatch = DispatchInstruction.objects.filter(**dispatch_filter)
+                    loading = TruckLoadingDetails.objects.filter(dil_id__in=dispatch.values_list('dil_id', flat=True))
+                    truck_list = TruckList.objects.filter(id__in=loading.values_list('truck_list_id', flat=True),**truck_filter)
+
+                # getting truck list details based on dispatch filter and truck filter
                 serializer = TruckListSerializer(truck_list, many=True)
                 for data in serializer.data:
                     loading_details = TruckLoadingDetails.objects.filter(truck_list_id=data['id'])
@@ -335,8 +352,7 @@ class TruckListViewSet(viewsets.ModelViewSet):
                     data['loading_details'] = loading_details_serializer.data
                 return Response(serializer.data, status=status.HTTP_200_OK)
             else:
-                return Response({'error': 'Dispatch filter or Truck filter is required'},
-                                status=status.HTTP_400_BAD_REQUEST)
+                return Response({'error': 'Dispatch filter or Truck filter is required'},status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -504,7 +520,8 @@ class DeliveryChallanViewSet(viewsets.ModelViewSet):
             truck_loading_details = TruckLoadingDetails.objects.filter(truck_list_id=truck_list_id)
             no_of_boxes = truck_list.first().no_of_boxes if truck_list.exists() else 0
             if truck_list.exists():  # Check if truck_list exists
-                lrn_date = datetime.datetime.strptime(data.get('lrn_date'), "%Y-%m-%dT%H:%M:%S.%fZ").strftime("%Y-%m-%d")
+                lrn_date = datetime.datetime.strptime(data.get('lrn_date'), "%Y-%m-%dT%H:%M:%S.%fZ").strftime(
+                    "%Y-%m-%d")
                 delivery_challan = DeliveryChallan.objects.create(
                     truck_list=truck_list.first(),
                     e_way_bill_no=data.get('e_way_bill_no'),
@@ -516,7 +533,8 @@ class DeliveryChallanViewSet(viewsets.ModelViewSet):
                     updated_by=request.user
                 )
                 for dc_inv in dc_invoice_details:
-                    bill_date = datetime.datetime.strptime(dc_inv.get('bill_date'), "%Y-%m-%dT%H:%M:%S.%fZ").strftime("%Y-%m-%d")
+                    bill_date = datetime.datetime.strptime(dc_inv.get('bill_date'), "%Y-%m-%dT%H:%M:%S.%fZ").strftime(
+                        "%Y-%m-%d")
                     DCInvoiceDetails.objects.create(
                         delivery_challan=delivery_challan,
                         truck_list=truck_list.first(),
