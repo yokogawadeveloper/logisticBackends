@@ -504,20 +504,19 @@ class DeliveryChallanViewSet(viewsets.ModelViewSet):
             truck_loading_details = TruckLoadingDetails.objects.filter(truck_list_id=truck_list_id)
             no_of_boxes = truck_list.first().no_of_boxes if truck_list.exists() else 0
             if truck_list.exists():  # Check if truck_list exists
-                lrn_date = datetime.datetime.strptime(data.get('lrn_date'), "%Y-%m-%dT%H:%M:%S.%fZ").strftime(
-                    "%Y-%m-%d")
+                lrn_date = datetime.datetime.strptime(data.get('lrn_date'), "%Y-%m-%dT%H:%M:%S.%fZ").strftime("%Y-%m-%d")
                 delivery_challan = DeliveryChallan.objects.create(
                     truck_list=truck_list.first(),
                     e_way_bill_no=data.get('e_way_bill_no'),
                     lrn_no=data.get('lrn_no'),
                     lrn_date=lrn_date,  # Assign formatted date
+                    remarks=data.get('remarks'),
                     no_of_boxes=no_of_boxes,
                     created_by=request.user,
                     updated_by=request.user
                 )
                 for dc_inv in dc_invoice_details:
-                    bill_date = datetime.datetime.strptime(dc_inv.get('bill_date'), "%Y-%m-%dT%H:%M:%S.%fZ").strftime(
-                        "%Y-%m-%d")
+                    bill_date = datetime.datetime.strptime(dc_inv.get('bill_date'), "%Y-%m-%dT%H:%M:%S.%fZ").strftime("%Y-%m-%d")
                     DCInvoiceDetails.objects.create(
                         delivery_challan=delivery_challan,
                         truck_list=truck_list.first(),
@@ -556,6 +555,7 @@ class DeliveryChallanViewSet(viewsets.ModelViewSet):
                     e_way_bill_no=data.get('e_way_bill_no'),
                     lrn_no=data.get('lrn_no'),
                     lrn_date=data.get('lrn_date'),
+                    remarks=data.get('remarks'),
                     no_of_boxes=truck_list.first().no_of_boxes,
                     updated_by=request.user
                 )

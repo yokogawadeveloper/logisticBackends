@@ -7,7 +7,7 @@
 </head>
 
 <body>
-    <table style="width:100%;padding-top:1rem;">
+    <table style="width:100%;">
         <tr>
             <th width="10%"></th>
             <th width="10%"></th>
@@ -57,34 +57,38 @@
                 {% endif %}
 
                 {% if dispatch_data.ship_to_party_name != None %}
-                <p style="font-family:Calibri;font-size:15px;">
+                <p style="font-family:Calibri;font-size:12px;">
                     <span>{% if dispatch_data.ship_to_party_name == None %} - {% else %} {{dispatch_data.ship_to_party_name}} {% endif %}</span><br />
-                    <span>{% if dispatch_data.ship_to_street1 == None %} - {% else %} {{dispatch_data.ship_to_street1}} {% endif %}</span><br />
-                    
+                    <span>{% if dispatch_data.ship_to_address == None %} - {% else %} {{dispatch_data.ship_to_address}} {% endif %}</span><br />
+                    <span>{% if dispatch_data.ship_to_city == None %} - {% else %} {{dispatch_data.ship_to_city}} {% endif %}</span><br />
+                    <span>{% if dispatch_data.ship_to_postal_code == None %} - {% else %} {{dispatch_data.ship_to_postal_code}} {% endif %}</span><br />
+                    <span>{% if dispatch_data.ship_to_country == None %} - {% else %} {{dispatch_data.ship_to_country}} {% endif %}</span><br />
                 </p>
                 {% endif %}
             </td>
 
             <td colspan="4"></td>
             <td colspan="3" style="text-align:left;font-family:Arial;font-size:14px;"><b>Consignee Address:</b>
-                {% if ship_to_customer_name == None %}
-                <p style="font-family:Calibri;font-size:15px;">{{ship_to}}</p>
-                {% else %}
-                <p style="font-family:Calibri;font-size:15px;">
-                    {% if ship_to_customer_name == None %} {% else %} {{ship_to_customer_name}},<br /> {% endif %}
-                    {% if ship_to_street1 == None %} {% else %} {{ship_to_street1}},<br /> {% endif %}
-                    {% if ship_to_street2 == None %} {% else %} {{ship_to_street2}},<br /> {% endif %}
-                    {% if ship_to_city == None %} {% else %} {{ship_to_city}},<br /> {% endif %}
-                    {% if ship_to_postal_code == None %} {% else %} {{ship_to_postal_code}} - {% endif %}
-                    {% if ship_to_country_name == None %} {% else %} {{ship_to_country_name}} {% endif %}
+                {% if dispatch_data.ship_to_party_name == None %}
+                <p style="font-family:Calibri;font-size:15px;"> {{ship_to}}</p>
+                {% endif %}
+                
+                {% if dispatch_data.ship_to_party_name != None %}
+                <p style="font-family:Calibri;font-size:12px;">
+                    <span>{% if dispatch_data.ship_to_party_name == None %} - {% else %} {{dispatch_data.ship_to_party_name}} {% endif %}</span><br />
+                    <span>{% if dispatch_data.ship_to_address == None %} - {% else %} {{dispatch_data.ship_to_address}} {% endif %}</span><br />
+                    <span>{% if dispatch_data.ship_to_city == None %} - {% else %} {{dispatch_data.ship_to_city}} {% endif %}</span><br />
+                    <span>{% if dispatch_data.ship_to_postal_code == None %} - {% else %} {{dispatch_data.ship_to_postal_code}} {% endif %}</span><br />
+                    <span>{% if dispatch_data.ship_to_country == None %} - {% else %} {{dispatch_data.ship_to_country}} {% endif %}</span><br />
                 </p>
                 {% endif %}
             </td>
+            
         </tr>
         <!-- end ship to details  -->
 
         <tr>
-            <td><br /><br /></td>
+            <td></td>
         </tr>
 
         <tr>
@@ -93,17 +97,8 @@
         </tr>
 
         <tr>
-            <td><br /></td>
-        </tr>
-
-        <tr>
-            <td colspan="5" style="text-align:left;padding-bottom:18px;font-family:Arial;font-size:14px;"><b>Dear
-                    Sir/Madam,:</b></td>
+            <td colspan="5" style="text-align:left;padding-bottom:18px;font-family:Arial;font-size:14px;"><b>Dear Sir/Madam,:</b></td>
             <td colspan="5"><b></b></td>
-        </tr>
-
-        <tr>
-            <td><br /></td>
         </tr>
 
         <tr>
@@ -132,9 +127,6 @@
             <td colspan="5"></td>
         </tr>
 
-        <tr>
-            <td><br /></td>
-        </tr>
     </table>
 
     <table style="width:100%;border-collapse:collapse;">
@@ -151,46 +143,41 @@
                 <th width="10%"></th>
                 <th width="10%"></th>
             </tr>
-
-            <tr>
-                <th colspan="1" style='text-align: center;border:solid 1px;font-family:Arial;font-size:14px;'>Inv No
+    
+            <tr style="border: 1px solid black;">
+                <th colspan="1" style='text-align: center;border:solid 1px;font-family:Arial;font-size:12px;'>Inv No</th>
+                <th colspan="1" style='text-align: center;border:solid 1px;font-family:Arial;font-size:12px;'>Inv Date</th>
+                <th colspan="1" style='text-align: center;border:solid 1px;font-family:Arial;font-size:12px;'>Inv Value(INR)</th>
+                <th colspan="1" style='text-align: center;border:solid 1px;font-family:Arial;font-size:12px;'>Challan No</th>
+                <th colspan="1" style='text-align: center;border:solid 1px;font-family:Arial;font-size:12px;'>Challan Value(INR)</th>
+                <th colspan="1" style='text-align: center;border:solid 1px;font-family:Arial;font-size:12px;'>LRNo/LR Date</th>
+                <th colspan="1" style='text-align: center;border:solid 1px;font-family:Arial;font-size:12px;'>TruckNo.<br/TruckType</th>
+                <th colspan="1" style='text-align: center;border:solid 1px;font-family:Arial;font-size:12px;'>Qty</th>
+                <th colspan="1" style='text-align: center;border:solid 1px;font-family:sans-serif;font-size:12px;'>UOM</th>
+                <th colspan="1" style='text-align: center;border:solid 1px;font-family:Arial;font-size:12px;'>EWay Bill no
                 </th>
-                <th colspan="2" style='text-align: center;border:solid 1px;font-family:Arial;font-size:14px;'>Inv Date
-                </th>
-                <th colspan="1" style='text-align: center;border:solid 1px;font-family:Arial;font-size:14px;'>Inv
-                    Value(INR)</th>
-                <th colspan="1" style='text-align: center;border:solid 1px;font-family:Arial;font-size:14px;'>Challan No
-                </th>
-                <th colspan="1" style='text-align: center;border:solid 1px;font-family:Arial;font-size:14px;'>Challan
-                    Value(INR)</th>
-                <th colspan="1" style='text-align: center;border:solid 1px;font-family:Arial;font-size:14px;'>LRNo/LR
-                    Date</th>
-                <th colspan="1" style='text-align: center;border:solid 1px;font-family:Arial;font-size:14px;'>Truck
-                    No./TruckType</th>
-                <th colspan="1" style='text-align: center;border:solid 1px;font-family:Arial;font-size:14px;'>Qty</th>
-                <th colspan="1" style='text-align: center;border:solid 1px;font-family:sans-serif;font-size:14px;'>UOM
-                </th>
-                <th colspan="1" style='text-align: center;border:solid 1px;font-family:Arial;font-size:14px;'>EWay Bill
-                    no</th>
             </tr>
         </thead>
-
+    
         <tbody>
-            {% for data in challanData %}
-            <tr>
-                <td colspan="1" style='text-align: center;border:solid 1px;font-family:Arial;font-size:14px;'>
-                    {% if data.inv_no == None %} - {% else %} {{data.inv_no}} {% endif %}
-                </td>
-                <td colspan="2" style='text-align: center;border:solid 1px;font-family:Arial;font-size:14px;'>
-                    {% if data.inv_date == None %} - {% else %} {{data.inv_date}} {% endif %}
-                </td>
-
+            {% for data in dc_invoice_data %}
+            <tr style="border: 1px solid black;">
+                <td colspan="1" style='text-align: center;border:solid 1px;'>{% if data.bill_no == None %} - {% else %} {{data.bill_no}} {% endif %}</td>
+                <td colspan="1" style='text-align: center;border:solid 1px;'>{% if data.bill_date == None %} - {% else %} {{data.bill_date}} {% endif %}</td>
+                <td colspan="1" style='text-align: center;border:solid 1px;'>{% if data.bill_amount == None %} - {% else %} {{data.bill_amount}} {% endif %}</td>
+                <td colspan="1" style='text-align: center;border:solid 1px;'>{% if data.challen_no == None %} - {% else %} {{data.challen_no}} {% endif %}</td>
+                <td colspan="1" style='text-align: center;border:solid 1px;'>{% if data.truck_amount == None %} - {% else %} {{data.truck_amount}} {% endif %}</td>
+                <td colspan="1" style='text-align: center;border:solid 1px;'>{% if data.lrn_no == None %} - {% else %} {{data.lrn_no}} {% endif %}/{% if data.lrn_date == None %} - {% else %} {{data.lrn_date}} {% endif %}</td>
+                <td colspan="1" style='text-align: center;border:solid 1px;'>{% if data.truckNo == None %} - {% else %} {{data.truckNo}} {% endif %}/{% if data.truckType == None %} - {% else %} {{data.truckType}} {% endif %}</td>
+                <td colspan="1" style='text-align: center;border:solid 1px;'>{% if data.qty == None %} - {% else %} {{data.qty}} {% endif %}</td>
+                <td colspan="1" style='text-align: center;border:solid 1px;'>PKG</td>
+                <td colspan="1" style='text-align: center;border:solid 1px;'>{% if data.eway_bill_no == None %} - {% else %} {{data.eway_bill_no}} {% endif %}</td>
             </tr>
             {% endfor %}
         </tbody>
     </table>
 
-    <table style="width:100%;padding-top:1rem;">
+    <table style="width:100%;">
         <tr>
             <th width="10%"></th>
             <th width="10%"></th>

@@ -136,6 +136,7 @@ class DeliveryChallan(models.Model):
     lrn_no = models.CharField(max_length=100, null=True)
     lrn_date = models.DateField(null=True, blank=True)
     no_of_boxes = models.IntegerField(default=0)
+    remarks = models.TextField(null=True)
     # other fields
     created_by = models.ForeignKey(User, related_name='+', null=True, on_delete=models.CASCADE)
     created_at = models.DateTimeField(auto_now_add=True, null=True)

@@ -65,9 +65,6 @@ class DispatchBillDetailsSerializer(serializers.ModelSerializer):
 
 
 class MasterItemListSerializer(serializers.ModelSerializer):
-    material_description = serializers.CharField(max_length=100, required=True)
-    material_no = serializers.CharField(max_length=20, required=True)
-
     class Meta:
         model = MasterItemList
         fields = '__all__'
