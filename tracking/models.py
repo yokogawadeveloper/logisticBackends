@@ -136,6 +136,12 @@ class DeliveryChallan(models.Model):
     lrn_no = models.CharField(max_length=100, null=True)
     lrn_date = models.DateField(null=True, blank=True)
     no_of_boxes = models.IntegerField(default=0)
+    description_of_goods = models.CharField(max_length=200, null=True)
+    mode_of_delivery = models.CharField(max_length=100, null=True)
+    freight_mode = models.CharField(max_length=100, null=True)
+    destination = models.CharField(max_length=100, null=True)
+    kind_attended = models.CharField(max_length=100, null=True)
+    consignee_remakes = models.CharField(max_length=100, null=True)
     remarks = models.TextField(null=True)
     # other fields
     created_by = models.ForeignKey(User, related_name='+', null=True, on_delete=models.CASCADE)

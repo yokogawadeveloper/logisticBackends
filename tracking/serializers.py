@@ -55,10 +55,18 @@ class TruckLoadingDetailsSerializer(serializers.ModelSerializer):
         depth = 1
 
 
+class SpecialTruckLoadingDetailsSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = TruckLoadingDetails
+        fields = '__all__'
+
+
 class DCInvoiceDetailsSerializer(serializers.ModelSerializer):
     lrn_no = serializers.ReadOnlyField(source='delivery_challan.lrn_no')
+    lrn_date = serializers.ReadOnlyField(source='delivery_challan.lrn_date')
     e_way_bill_no = serializers.ReadOnlyField(source='delivery_challan.e_way_bill_no')
     truck_no = serializers.ReadOnlyField(source='truck_list.vehicle_no')
+    truck_type = serializers.ReadOnlyField(source='truck_list.truck_type.name')
 
     class Meta:
         model = DCInvoiceDetails

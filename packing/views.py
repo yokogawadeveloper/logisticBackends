@@ -217,8 +217,7 @@ class BoxDetailViewSet(viewsets.ModelViewSet):
                         item_list.append(item)
                 box['item_list'] = item_list
 
-            return Response({'box_data': box_serializer_data, 'new_item_packing': new_item_packing_serializer.data},
-                            status=status.HTTP_200_OK)
+            return Response({'box_data': box_serializer_data, 'new_item_packing': new_item_packing_serializer.data},status=status.HTTP_200_OK)
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
