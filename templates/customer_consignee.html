@@ -32,7 +32,7 @@
                     Yil-logistics@yokogawa.com</P>
             </td>
 
-            <!-- <td colspan="3" style="font-size:15px;text-align:right;"><img src="{{ yokogawa_logo }}" width="130px" height="22px" /></td> -->
+            <td colspan="3" style="font-size:15px;text-align:right;"><img src="https://i.imgur.com/KzFmExO.png" width="130px" height="22px" /></td>
         </tr>
 
         <tr>
@@ -168,10 +168,10 @@
                 <td colspan="1" style='text-align: center;border:solid 1px;'>{% if data.challen_no == None %} - {% else %} {{data.challen_no}} {% endif %}</td>
                 <td colspan="1" style='text-align: center;border:solid 1px;'>{% if data.truck_amount == None %} - {% else %} {{data.truck_amount}} {% endif %}</td>
                 <td colspan="1" style='text-align: center;border:solid 1px;'>{% if data.lrn_no == None %} - {% else %} {{data.lrn_no}} {% endif %}/{% if data.lrn_date == None %} - {% else %} {{data.lrn_date}} {% endif %}</td>
-                <td colspan="1" style='text-align: center;border:solid 1px;'>{% if data.truckNo == None %} - {% else %} {{data.truckNo}} {% endif %}/{% if data.truckType == None %} - {% else %} {{data.truckType}} {% endif %}</td>
+                <td colspan="1" style='text-align: center;border:solid 1px;'>{% if data.truck_no == None %} - {% else %} {{data.truck_no}} {% endif %}/{% if data.truck_type == None %} - {% else %} {{data.truck_type}} {% endif %}</td>
                 <td colspan="1" style='text-align: center;border:solid 1px;'>{% if data.qty == None %} - {% else %} {{data.qty}} {% endif %}</td>
                 <td colspan="1" style='text-align: center;border:solid 1px;'>PKG</td>
-                <td colspan="1" style='text-align: center;border:solid 1px;'>{% if data.eway_bill_no == None %} - {% else %} {{data.eway_bill_no}} {% endif %}</td>
+                <td colspan="1" style='text-align: center;border:solid 1px;'>{% if data.e_way_bill_no == None %} - {% else %} {{data.e_way_bill_no}} {% endif %}</td>
             </tr>
             {% endfor %}
         </tbody>

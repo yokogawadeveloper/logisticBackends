@@ -19,6 +19,7 @@ router.register('sub_department', SubDepartmentViewSet, basename='sub_department
 # ----------------------------- DispatchInstruction ------------------------------------------- #
 router.register('dispatch_instruction', DispatchInstructionViewSet, basename='dispatch_instruction')
 router.register('sap_dispatch_instruction', SAPDispatchInstructionViewSet, basename='sap_dispatch_instruction')
+router.register('sap_invoice_details', SAPInvoiceDetailsViewSet, basename='sap_invoice_details')
 router.register('dispatch_bill_details', DispatchBillDetailsViewSet, basename='dispatch_bill_details')
 router.register('master_item_list', MasterItemListViewSet, basename='master_item_list')
 router.register('master_item_batch_list', MasterItemBatchViewSet, basename='master_item_batch_list')

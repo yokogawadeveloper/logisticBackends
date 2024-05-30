@@ -171,6 +171,39 @@ class SAPDispatchInstruction(models.Model):
         db_table = "SAPDispatchInstruction"
 
 
+class SAPInvoiceDetails(models.Model):
+    reference_doc = models.CharField(max_length=100, null=True, blank=True)
+    reference_doc_item = models.CharField(max_length=100, null=True, blank=True)
+    delivery = models.CharField(max_length=100, null=True, blank=True)
+    delivery_create_date = models.DateField(blank=True, null=True)
+    delivery_item = models.CharField(max_length=100, null=True, blank=True)
+    tax_invoice_no = models.CharField(max_length=100, null=True, blank=True)
+    tax_invoice_date = models.DateField(blank=True, null=True)
+    linkage_no = models.CharField(max_length=100, null=True, blank=True)
+    term_of_payment = models.CharField(max_length=100, null=True, blank=True)
+    challan_no = models.CharField(max_length=100, null=True, blank=True)
+    challan_create_date = models.DateField(blank=True, null=True)
+    challan_item = models.CharField(max_length=100, null=True, blank=True)
+    billing_number = models.CharField(max_length=100, null=True, blank=True)
+    billing_create_date = models.DateField(blank=True, null=True)
+    sales_currency = models.CharField(max_length=100, null=True, blank=True)
+    DIL_output_date = models.DateField(blank=True, null=True)
+    tax_invoice_assessable_value = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    tax_invoice_total_tax_value = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    tax_invoice_total_value = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    sales_item_price = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    # default fields
+    created_by = models.ForeignKey(User, related_name='+', null=True, on_delete=models.CASCADE, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True, null=True)
+    updated_by = models.ForeignKey(User, related_name='+', null=True, on_delete=models.CASCADE, blank=True)
+    updated_at = models.DateTimeField(auto_now_add=True, null=True)
+
+    objects = models.Manager()
+
+    class Meta:
+        db_table = "SAPInvoiceDetails"
+
+
 class DispatchBillDetails(models.Model):
     di_bill_id = models.AutoField(primary_key=True)
     dil_id = models.ForeignKey(DispatchInstruction, on_delete=models.CASCADE, null=True, blank=True)
@@ -227,7 +260,8 @@ class DispatchPODetails(models.Model):
 
 class MasterItemList(models.Model):
     item_id = models.AutoField(primary_key=True)
-    dil_id = models.ForeignKey(DispatchInstruction,related_name='master_list', on_delete=models.CASCADE, null=True, blank=True)
+    dil_id = models.ForeignKey(DispatchInstruction, related_name='master_list', on_delete=models.CASCADE, null=True,
+                               blank=True)
     item_no = models.CharField(max_length=100, null=True, blank=True)
     unit_of_measurement = models.CharField(max_length=100, null=True, blank=True)
     so_no = models.CharField(max_length=100, null=True, blank=True)
@@ -280,7 +314,8 @@ class MasterItemList(models.Model):
 
 class InlineItemList(models.Model):
     inline_item_id = models.AutoField(primary_key=True)
-    master_item = models.ForeignKey(MasterItemList, related_name='inline_items', on_delete=models.CASCADE, null=True,blank=True)
+    master_item = models.ForeignKey(MasterItemList, related_name='inline_items', on_delete=models.CASCADE, null=True,
+                                    blank=True)
     serial_no = models.CharField(max_length=100, null=True, blank=True)
     tag_no = models.CharField(max_length=100, null=True, blank=True)
     accessory = models.CharField(max_length=100, null=True, blank=True)

@@ -45,6 +45,23 @@ class SAPDispatchInstructionSerializer(serializers.ModelSerializer):
         return super(SAPDispatchInstructionSerializer, self).update(instance, validated_data)
 
 
+class SAPInvoiceDetailsSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = SAPInvoiceDetails
+        fields = '__all__'
+        read_only_fields = ['created_by', 'created_at', 'updated_by', 'updated_at', 'is_active']
+
+    def create(self, validated_data):
+        validated_data['created_by'] = self.context['request'].user
+        validated_data['updated_by'] = self.context['request'].user
+        validated_data['is_active'] = True
+        return SAPInvoiceDetails.objects.create(**validated_data)
+
+    def update(self, instance, validated_data):
+        validated_data['updated_by'] = self.context['request'].user
+        return super(SAPInvoiceDetailsSerializer, self).update(instance, validated_data)
+
+
 class DispatchBillDetailsSerializer(serializers.ModelSerializer):
     dil_id = serializers.PrimaryKeyRelatedField(queryset=DispatchInstruction.objects.all(), required=True)
 

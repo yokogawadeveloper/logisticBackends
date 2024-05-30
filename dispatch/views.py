@@ -1,4 +1,5 @@
 from django.core.exceptions import ObjectDoesNotExist
+from .frames import column_mapping, sap_invoice_columns
 from django.template.loader import render_to_string
 from rest_framework import permissions, status
 from rest_framework.decorators import action
@@ -7,7 +8,6 @@ from django.db import transaction
 from rest_framework import viewsets
 from django.db.models import F
 from datetime import datetime
-from .frames import column_mapping
 from .utils import send_email
 from workflow.models import *
 from .serializers import *
@@ -362,6 +362,127 @@ class SAPDispatchInstructionViewSet(viewsets.ModelViewSet):
         except Exception as e:
             transaction.rollback()
             return Response({'message': str(e), 'status': status.HTTP_400_BAD_REQUEST})
+
+
+class SAPInvoiceDetailsViewSet(viewsets.ModelViewSet):
+    queryset = SAPInvoiceDetails.objects.all()
+    serializer_class = SAPInvoiceDetailsSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        if serializer.is_valid(raise_exception=True):
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def update(self, request, *args, **kwargs):
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=request.data, partial=True)
+        if serializer.is_valid(raise_exception=True):
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
+        instance.is_active = False
+        instance.save()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+    @action(detail=False, methods=['post'], url_path='upload_sap_invoice_details')
+    def upload_sap_invoice_details(self, request, *args, **kwargs):
+        try:
+            file = request.FILES['file']
+            # Specify columns to be read as strings
+            dtype_dict = {'Delivery': str,
+                          'Reference Document': str,
+                          'Reference Document Item': str,
+                          'Delivery Item': str,
+                          'Tax Invoice Number (ODN)': str,
+                          'Linkage Number': str,
+                          'Terms of Payment': str,
+                          'Challan No': str,
+                          'Challan Item': str,
+                          'Billing Number': str,
+                          'Currency (Sales)': str
+                          }
+            df = pd.read_excel(file, sheet_name='Sheet1', dtype=dtype_dict)
+            df = df.rename(columns=sap_invoice_columns)
+            required_columns = list(sap_invoice_columns.values())
+            df = df[required_columns]
+
+            # Ensure date columns are parsed correctly
+            date_columns = ['Delivery Create Date', 'Tax Invoice Date', 'Challan Create Date',
+                            'Billing Create Date', 'DIL Output Date']
+            for date_col in date_columns:
+                df[date_col] = pd.to_datetime(df[date_col], errors='coerce')
+
+            # Fill NaN values for numeric fields
+            numeric_columns = ['Tax Invoice Assessable Value', 'Tax Invoice Total Tax Value',
+                               'Tax Invoice Total Value', 'Item Price (Sales)']
+            df[numeric_columns] = df[numeric_columns].fillna(0)
+
+            missing_columns = [col for col in required_columns if col not in df.columns]
+            if not missing_columns:
+                linkage_nos = df['Linkage Number'].unique()
+
+                with transaction.atomic():
+                    # Delete existing records with the same linkage_no
+                    SAPInvoiceDetails.objects.filter(linkage_no__in=linkage_nos).delete()
+
+                    objects_to_create = []
+                    for index, row in df.iterrows():
+                        obj = SAPInvoiceDetails(
+                            reference_doc=row['Reference Document'],
+                            reference_doc_item=row['Reference Document Item'],
+                            delivery=row['Delivery'],
+                            delivery_create_date=row['Delivery Create Date'] if pd.notna(
+                                row['Delivery Create Date']) else None,
+                            delivery_item=row['Delivery Item'],
+                            tax_invoice_no=row['Tax Invoice Number (ODN)'],
+                            tax_invoice_date=row['Tax Invoice Date'] if pd.notna(row['Tax Invoice Date']) else None,
+                            linkage_no=row['Linkage Number'],
+                            term_of_payment=row['Terms of Payment'],
+                            challan_no=row['Challan No'],
+                            challan_create_date=row['Challan Create Date'] if pd.notna(
+                                row['Challan Create Date']) else None,
+                            challan_item=row['Challan Item'],
+                            billing_number=row['Billing Number'],
+                            billing_create_date=row['Billing Create Date'] if pd.notna(
+                                row['Billing Create Date']) else None,
+                            sales_currency=row['Currency (Sales)'],
+                            DIL_output_date=row['DIL Output Date'] if pd.notna(row['DIL Output Date']) else None,
+                            tax_invoice_assessable_value=row['Tax Invoice Assessable Value'],
+                            tax_invoice_total_tax_value=row['Tax Invoice Total Tax Value'],
+                            tax_invoice_total_value=row['Tax Invoice Total Value'],
+                            sales_item_price=float(row['Item Price (Sales)']),
+                            created_by=request.user
+                        )
+                        objects_to_create.append(obj)
+
+                    SAPInvoiceDetails.objects.bulk_create(objects_to_create)
+
+                return Response({'message': 'File uploaded successfully', 'status': status.HTTP_201_CREATED})
+            else:
+                return Response(
+                    {'message': f'File is missing the following required columns: {", ".join(missing_columns)}',
+                     'status': status.HTTP_400_BAD_REQUEST
+                     })
+        except Exception as e:
+            # If any issue occurs, show which columns are missing or causing the error
+            transaction.rollback()
+            return Response({'message': str(e), 'status': status.HTTP_400_BAD_REQUEST})
+
+    @action(detail=False, methods=['post'], url_path='dynamic_filter_sap_invoice_details')
+    def dynamic_filter_sap_invoice_details(self, request, *args, **kwargs):
+        try:
+            data = request.data
+            filter_data = SAPInvoiceDetails.objects.filter(**data)
+            serializer = SAPInvoiceDetailsSerializer(filter_data, many=True)
+            return Response(serializer.data)
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 
 class DispatchBillDetailsViewSet(viewsets.ModelViewSet):
