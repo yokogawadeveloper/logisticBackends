@@ -89,7 +89,7 @@ class TruckList(models.Model):
     check_in_remarks = models.CharField(max_length=500, null=True, blank=True)
     check_out_remarks = models.CharField(max_length=500, null=True, blank=True)
     check_out = models.DateTimeField(null=True, blank=True)
-    check_out_by = models.ForeignKey(User,null=True, on_delete=models.CASCADE)
+    check_out_by = models.ForeignKey(User, null=True, on_delete=models.CASCADE)
     gate_pass_no = models.IntegerField(default=0)
     status = models.CharField(max_length=50, default='Open')
     loading_remarks = models.CharField(max_length=300, null=True)
@@ -160,7 +160,9 @@ class DeliveryChallan(models.Model):
 
 
 class DCInvoiceDetails(models.Model):
-    delivery_challan = models.ForeignKey(DeliveryChallan,related_name='dc_invoice_details', on_delete=models.CASCADE)
+    delivery_challan = models.ForeignKey(DeliveryChallan, related_name='dc_invoice_details', on_delete=models.CASCADE)
+    dil_id = models.ForeignKey(DispatchInstruction, null=True, on_delete=models.CASCADE)
+    so_no = models.CharField(max_length=100, null=True)
     truck_list = models.ForeignKey(TruckList, on_delete=models.CASCADE)
     bill_no = models.CharField(max_length=100, null=True)
     bill_date = models.DateField(null=True, blank=True)
@@ -177,3 +179,26 @@ class DCInvoiceDetails(models.Model):
 
     class Meta:
         db_table = 'DCInvoiceDetails'
+
+
+class InvoiceChequeDetails(models.Model):
+    dc_invoice_details = models.ForeignKey(DCInvoiceDetails, related_name='invoice_cheque_details', on_delete=models.CASCADE)
+    cod_cheque_value = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    invoice_no = models.CharField(max_length=100, null=True)
+    cheque_no = models.CharField(max_length=100, null=True)
+    cod_cheque_received_date = models.DateField(null=True, blank=True)
+    bank_name = models.CharField(max_length=100, null=True)
+    cheque_date = models.DateField(null=True, blank=True)
+    cheque_withdrawal_date = models.DateField(null=True, blank=True)
+    remarks = models.CharField(max_length=100, null=True)
+    # other fields
+    created_by = models.ForeignKey(User, related_name='+', null=True, on_delete=models.CASCADE)
+    created_at = models.DateTimeField(auto_now_add=True, null=True)
+    updated_by = models.ForeignKey(User, related_name='+', null=True, on_delete=models.CASCADE)
+    updated_at = models.DateTimeField(auto_now_add=True, null=True)
+    is_active = models.BooleanField(default=True)
+
+    objects = models.Manager()
+
+    class Meta:
+        db_table = 'InvoiceChequeDetails'

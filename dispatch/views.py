@@ -4,6 +4,7 @@ from django.template.loader import render_to_string
 from rest_framework import permissions, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
+from django.db.models import Sum
 from django.db import transaction
 from rest_framework import viewsets
 from django.db.models import F
@@ -481,6 +482,21 @@ class SAPInvoiceDetailsViewSet(viewsets.ModelViewSet):
             filter_data = SAPInvoiceDetails.objects.filter(**data)
             serializer = SAPInvoiceDetailsSerializer(filter_data, many=True)
             return Response(serializer.data)
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+    @action(detail=False, methods=['post'], url_path='get_sap_invoice_details_amounts')
+    def get_sap_invoice_details_amounts(self, request, *args, **kwargs):
+        try:
+            data = request.data
+            filter_data = SAPInvoiceDetails.objects.filter(**data).values('tax_invoice_no', 'challan_no').annotate(
+                tax_invoice_assessable_value=Sum('tax_invoice_assessable_value'),
+                tax_invoice_total_tax_value=Sum('tax_invoice_total_tax_value'),
+                tax_invoice_total_value=Sum('tax_invoice_total_value'),
+                tax_invoice_date=F('tax_invoice_date'),
+                challan_create_date=F('challan_create_date'),
+            )
+            return Response(filter_data)
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
