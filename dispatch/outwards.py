@@ -22,10 +22,10 @@ class ConnectionDispatchViewSet(viewsets.ModelViewSet):
     def dump_dispatch_po_details(self, request, pk=None):
         so_no = request.data.get('so_no')
         try:
-            server = '10.29.15.169'
-            database = 'Logisticks070224'
+            server = '10.29.15.180'
+            database = 'Logisticks'
             username = 'sa'
-            password = 'Yokogawa@12345'
+            password = 'LogDB*$@#032024'
             # Establish connection
             connection = pyodbc.connect(
                 'DRIVER={SQL Server};SERVER=' + server + ';DATABASE=' + database + ';UID=' + username + ';PWD=' + password)
@@ -63,10 +63,10 @@ class ConnectionDispatchViewSet(viewsets.ModelViewSet):
         so_no = request.data.get('so_no')
         dil_id = request.data.get('dil_id')
         try:
-            server = '10.29.15.169'
-            database = 'Logisticks070224'
+            server = '10.29.15.180'
+            database = 'Logisticks'
             username = 'sa'
-            password = 'Yokogawa@12345'
+            password = 'LogDB*$@#032024'
             # Establish connection
             connection = pyodbc.connect(
                 'DRIVER={SQL Server};SERVER=' + server + ';DATABASE=' + database + ';UID=' + username + ';PWD=' + password)
@@ -92,8 +92,9 @@ class ConnectionDispatchViewSet(viewsets.ModelViewSet):
             connection_cursor.execute(query, [so_no] + item_nos)
             results = connection_cursor.fetchall()
             json_results = [dict(zip([column[0] for column in connection_cursor.description], row)) for row in results]
+
             for item in json_results:
-                master_item = MasterItemList.objects.filter(item_no=item['ItemNo'], so_no=so_no)
+                master_item = MasterItemList.objects.filter(item_no=item['ItemNo'], so_no=so_no,dil_id_id=dil_id)
                 previous_serial_no_qty = master_item.first().serial_no_qty if master_item.exists() else 0
                 master_item.update(
                     warranty_date=item['WarrantyDate'],
@@ -108,11 +109,12 @@ class ConnectionDispatchViewSet(viewsets.ModelViewSet):
                         item['TagNo'] == '' or item['TagNo'] is None):
                     pass
                 else:
-                    InlineItemList.objects.filter(master_item=master_item.first()).delete()
+                    InlineItemList.objects.filter(master_item=master_item.first(),component_no=item['ComponentNo']).delete()
                     InlineItemList.objects.create(
                         master_item=master_item.first(),
                         serial_no=item['Serialnumber'],
                         tag_no=item['TagNo'],
+                        component_no=item['ComponentNo'],
                         quantity=1
                     )
 

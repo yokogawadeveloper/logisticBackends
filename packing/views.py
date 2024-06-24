@@ -217,7 +217,8 @@ class BoxDetailViewSet(viewsets.ModelViewSet):
                         item_list.append(item)
                 box['item_list'] = item_list
 
-            return Response({'box_data': box_serializer_data, 'new_item_packing': new_item_packing_serializer.data},status=status.HTTP_200_OK)
+            return Response({'box_data': box_serializer_data, 'new_item_packing': new_item_packing_serializer.data},
+                            status=status.HTTP_200_OK)
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -309,9 +310,11 @@ class ItemPackingViewSet(viewsets.ModelViewSet):
                             model_obj = BoxDetails.objects.get(box_details_id=obj['box_details_id'])
                             model_obj.parent_box = parent_box  # from main box
                             model_obj.status = 'packed'
+                            model_obj.box_no_manual = obj['box_no_manual']
+
                             update_list.append(model_obj)
                         # update the BoxDetails
-                        BoxDetails.objects.bulk_update(update_list, ['parent_box', 'status'])
+                        BoxDetails.objects.bulk_update(update_list, ['parent_box', 'status','box_no_manual'])
 
                 else:
                     parent_box = None
@@ -350,6 +353,8 @@ class ItemPackingViewSet(viewsets.ModelViewSet):
                     qa_wetness=data['qa_wetness'],
                     project_wetness=data['project_wetness'],
 
+
+
                     box_price=price,
                     created_by=request.user
                 )
@@ -368,12 +373,12 @@ class ItemPackingViewSet(viewsets.ModelViewSet):
                         created_by_id=request.user.id,
                     )
                     for inline_items in obj['inline_items']:
-                        inline_item = InlineItemList.objects.filter(
-                            inline_item_id=inline_items['inline_item_id']).first()
+
                         serial_no = inline_items['serial_no']
                         tag_no = inline_items['tag_no']
+                        box_no_manual = inline_items['box_count_no']
                         ItemPackingInline.objects.create(
-                            item_ref_id=inline_item,
+                            box_no_manual=box_no_manual,
                             item_pack_id=item_packing,
                             serial_no=serial_no,
                             tag_no=tag_no,

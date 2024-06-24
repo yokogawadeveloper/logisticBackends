@@ -32,7 +32,7 @@
                     Yil-logistics@yokogawa.com</P>
             </td>
 
-            <td colspan="3" style="font-size:15px;text-align:right;"><img src="https://i.imgur.com/KzFmExO.png" width="130px" height="22px" /></td>
+            <!-- <td colspan="3" style="font-size:15px;text-align:right;"><img src="{{ yokogawa_logo }}" width="130px" height="22px" /></td> -->
         </tr>
 
         <tr>
@@ -40,7 +40,8 @@
         </tr>
 
         <tr>
-            <td colspan="5" style="text-align:left;font-family:Arial;font-size:14px;">Date: {% now "N j, Y" %}</td>
+            <td colspan="5" style="text-align:left;font-family:Arial;font-size:14px;">Date: {% if Today == None %} - {%
+                else %} {{Today}} {% endif %}</td>
             <td colspan="5"><b></b></td>
         </tr>
 
@@ -91,9 +92,8 @@
         </tr>
 
         <tr>
-            <td colspan="10" style="text-align:left;padding-bottom:22px;font-family:Arial;font-size:14px;">
-                <b>Kind Attn: </b>{% if delivery_challan.kind_attended == None %} - {% else %} {{delivery_challan.kind_attended}} {% endif %}
-            </td>
+            <td colspan="10" style="text-align:left;padding-bottom:22px;font-family:Arial;font-size:14px;"><b>Kind Attn:
+                </b>{% if other_person_name == None %} - {% else %} {{other_person_name}} {% endif %}</td>
         </tr>
 
         <tr>
@@ -168,10 +168,10 @@
                 <td colspan="1" style='text-align: center;border:solid 1px;'>{% if data.challen_no == None %} - {% else %} {{data.challen_no}} {% endif %}</td>
                 <td colspan="1" style='text-align: center;border:solid 1px;'>{% if data.truck_amount == None %} - {% else %} {{data.truck_amount}} {% endif %}</td>
                 <td colspan="1" style='text-align: center;border:solid 1px;'>{% if data.lrn_no == None %} - {% else %} {{data.lrn_no}} {% endif %}/{% if data.lrn_date == None %} - {% else %} {{data.lrn_date}} {% endif %}</td>
-                <td colspan="1" style='text-align: center;border:solid 1px;'>{% if data.truck_no == None %} - {% else %} {{data.truck_no}} {% endif %}/{% if data.truck_type == None %} - {% else %} {{data.truck_type}} {% endif %}</td>
+                <td colspan="1" style='text-align: center;border:solid 1px;'>{% if data.truckNo == None %} - {% else %} {{data.truckNo}} {% endif %}/{% if data.truckType == None %} - {% else %} {{data.truckType}} {% endif %}</td>
                 <td colspan="1" style='text-align: center;border:solid 1px;'>{% if data.qty == None %} - {% else %} {{data.qty}} {% endif %}</td>
                 <td colspan="1" style='text-align: center;border:solid 1px;'>PKG</td>
-                <td colspan="1" style='text-align: center;border:solid 1px;'>{% if data.e_way_bill_no == None %} - {% else %} {{data.e_way_bill_no}} {% endif %}</td>
+                <td colspan="1" style='text-align: center;border:solid 1px;'>{% if data.eway_bill_no == None %} - {% else %} {{data.eway_bill_no}} {% endif %}</td>
             </tr>
             {% endfor %}
         </tbody>
@@ -196,56 +196,52 @@
         </tr>
 
         <tr>
-            <td colspan="5" style="text-align:left;font-family:Arial;font-size:12px;"><b>DESCRIPTION OF GOODS:</b></td>
-            <td colspan="5" style="text-align:left;font-family:Arial;font-size:12px;">
-                <span>{% if delivery_challan.description_of_goods == None %} - {% else %} {{delivery_challan.description_of_goods}} {% endif %}</span>
+            <td colspan="5" style="text-align:left;font-family:Arial;font-size:14px;"><b>DESCRIPTION OF GOODS:</b></td>
+            <td colspan="5" style="text-align:left;font-family:Arial;font-size:14px;">
+                <span>{% if descOfGoods == None %} - {% else %} {{descOfGoods}} {% endif %}</span>
             </td>
         </tr>
-        <!-- <tr>
-            <td colspan="5" style="text-align:left;font-family:Arial;font-size:12px;"><b>TRANSPORTER NAME</b></td>
-            <td colspan="5" style="text-align:left;font-family:Arial;font-size:12px;">
+        <tr>
+            <td colspan="5" style="text-align:left;font-family:Arial;font-size:14px;"><b>TRANSPORTER NAME</b></td>
+            <td colspan="5" style="text-align:left;font-family:Arial;font-size:14px;">
                 {% if TransporterName == None %} - {% else %} {{TransporterName}} {% endif %}
             </td>
         </tr>
         <tr>
-            <td colspan="5" style="text-align:left;font-family:Arial;font-size:12px;"><b>TRANSPORTATION MODE</b></td>
-            <td colspan="5" style="text-align:left;font-family:Arial;font-size:12px;">
+            <td colspan="5" style="text-align:left;font-family:Arial;font-size:14px;"><b>TRANSPORTATION MODE</b></td>
+            <td colspan="5" style="text-align:left;font-family:Arial;font-size:14px;">
                 {% if mode_of_transport == None %} - {% else %} {{mode_of_transport}} {% endif %}
             </td>
-        </tr> -->
+        </tr>
         <tr>
-            <td colspan="5" style="text-align:left;font-family:Arial;font-size:12px;"><b>MODE OF DELIVERY:</b></td>
-            <td colspan="5" style="text-align:left;font-family:Arial;font-size:12px;">
-                <span>{% if delivery_challan.mode_of_delivery == None %} - {% else %} {{delivery_challan.mode_of_delivery}} {% endif %}</span>
-            </td>
+            <td colspan="5" style="text-align:left;font-family:Arial;font-size:14px;"><b>MODE OF DELIVERY:</b></td>
+            <td colspan="5" style="text-align:left;font-family:Arial;font-size:14px;">
+                {% if deliveryMode == None %} - {% else %} {{deliveryMode}} {% endif %}
             </td>
         </tr>
         <tr>
-            <td colspan="5" style="text-align:left;font-family:Arial;font-size:12px;"><b>FREIGHT MODE:</b></td>
-            <td colspan="5" style="text-align:left;font-family:Arial;font-size:12px;">
-            <span>{% if delivery_challan.freight_mode == None %} - {% else %} {{delivery_challan.freight_mode}} {% endif %}</span>
-            </td>
+            <td colspan="5" style="text-align:left;font-family:Arial;font-size:14px;"><b>FREIGHT MODE:</b></td>
+            <td colspan="5" style="text-align:left;font-family:Arial;font-size:14px;">
+                {% if freightMode == None %} - {% else %} {{freightMode}} {% endif %}
             </td>
         </tr>
         <tr>
-            <td colspan="5" style="text-align:left;font-family:Arial;font-size:12px;"><b>DESTINATION:</b></td>
-            <td colspan="5" style="text-align:left;font-family:Arial;font-size:12px;">
-                <span>{% if delivery_challan.destination == None %} - {% else %} {{delivery_challan.destination}} {% endif %}</span>
-                </td>
+            <td colspan="5" style="text-align:left;font-family:Arial;font-size:14px;"><b>DESTINATION:</b></td>
+            <td colspan="5" style="text-align:left;font-family:Arial;font-size:14px;">
+                {% if Destination == None %} - {% else %} {{Destination}} {% endif %}
             </td>
         </tr>
-        <!-- <tr>
-            <td colspan="5" style="text-align:left;font-family:Arial;font-size:12px;"><b>TOTAL CONSIGNMENT VALUE:</b>
+        <tr>
+            <td colspan="5" style="text-align:left;font-family:Arial;font-size:14px;"><b>TOTAL CONSIGNMENT VALUE:</b>
             </td>
-            <td colspan="5" style="text-align:left;font-family:Arial;font-size:12px;">
+            <td colspan="5" style="text-align:left;font-family:Arial;font-size:14px;">
                 INR. {% if consignmentValue == None %} - {% else %} {{consignmentValue}} {% endif %}
             </td>
-        </tr> -->
+        </tr>
         <tr>
-            <td colspan="5" style="text-align:left;font-family:Arial;font-size:12px;"><b>REMARKS:</b></td>
-            <td colspan="5" style="text-align:left;padding-bottom:14px;font-family:Arial;font-size:12px;">
-                <span>{% if delivery_challan.consignee_remakes == None %} - {% else %} {{delivery_challan.consignee_remakes}} {% endif %}</span>
-                </td>
+            <td colspan="5" style="text-align:left;font-family:Arial;font-size:14px;"><b>REMARKS:</b></td>
+            <td colspan="5" style="text-align:left;padding-bottom:14px;font-family:Arial;font-size:14px;">
+                {% if truckReqRemarks == None %} - {% else %} {{truckReqRemarks}} {% endif %}
             </td>
         </tr>
 
@@ -255,7 +251,7 @@
 
 
         <tr>
-            <td colspan="5" style="text-align:left;font-family:Arial;font-size:12px;">
+            <td colspan="5" style="text-align:left;font-family:Arial;font-size:14px;">
                 <p>
                     Transit insurance is covered from :
                     {% if InsuranceScope == None %} - {% else %} {{InsuranceScope}} {% endif %}.
@@ -264,11 +260,11 @@
             <td colspan="5"></td>
         </tr>
         <tr>
-            <td colspan="5" style="text-align:left;font-family:Arial;font-size:12px;"><b>Regards....</b></td>
+            <td colspan="5" style="text-align:left;font-family:Arial;font-size:14px;"><b>Regards....</b></td>
             <td colspan="5" style="text-align:left;font-size:14px;"></td>
         </tr>
         <tr>
-            <td colspan="10" style="text-align:left;font-family:Arial;font-size:12px;">
+            <td colspan="10" style="text-align:left;font-family:Arial;font-size:14px;">
                 <b>{% if regards == None %} - {% else %} {{regards}} {% endif %}
                 </b>
             </td>

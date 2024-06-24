@@ -114,6 +114,21 @@ class TruckList(models.Model):
         db_table = 'TruckList'
 
 
+class TruckDilMappingDetails(models.Model):
+    dil_id = models.ForeignKey(DispatchInstruction, null=True, on_delete=models.CASCADE)
+    truck_list_id = models.ForeignKey(TruckList, null=True, on_delete=models.CASCADE)
+    created_by = models.ForeignKey(User, related_name='+', null=True, on_delete=models.CASCADE)
+    created_at = models.DateTimeField(auto_now_add=True, null=True)
+    updated_by = models.ForeignKey(User, related_name='+', null=True, on_delete=models.CASCADE)
+    updated_at = models.DateTimeField(auto_now_add=True, null=True)
+    is_active = models.BooleanField(default=True)
+
+    objects = models.Manager()
+
+    class Meta:
+        db_table = 'TruckDilMappingDetails'
+
+
 class TruckLoadingDetails(models.Model):
     dil_id = models.ForeignKey(DispatchInstruction, null=True, on_delete=models.CASCADE)
     truck_list_id = models.ForeignKey(TruckList, null=True, on_delete=models.CASCADE)
@@ -182,7 +197,8 @@ class DCInvoiceDetails(models.Model):
 
 
 class InvoiceChequeDetails(models.Model):
-    dc_invoice_details = models.ForeignKey(DCInvoiceDetails, related_name='invoice_cheque_details', on_delete=models.CASCADE)
+    dc_invoice_details = models.ForeignKey(DCInvoiceDetails, related_name='invoice_cheque_details',
+                                           on_delete=models.CASCADE)
     cod_cheque_value = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     invoice_no = models.CharField(max_length=100, null=True)
     cheque_no = models.CharField(max_length=100, null=True)

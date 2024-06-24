@@ -1,14 +1,13 @@
 from django.core.exceptions import ObjectDoesNotExist
-from .frames import column_mapping, sap_invoice_columns
 from django.template.loader import render_to_string
 from rest_framework import permissions, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from django.db.models import Sum
 from django.db import transaction
 from rest_framework import viewsets
 from django.db.models import F
 from datetime import datetime
+from .frames import column_mapping
 from .utils import send_email
 from workflow.models import *
 from .serializers import *
@@ -16,6 +15,10 @@ import pandas as pd
 import pyodbc
 import time
 
+from django.http import HttpResponse
+from urllib.parse import urlparse
+import os
+from collections import defaultdict
 
 # Create your views here.
 class DispatchInstructionViewSet(viewsets.ModelViewSet):
@@ -238,10 +241,10 @@ class SAPDispatchInstructionViewSet(viewsets.ModelViewSet):
                 sap_serializer_data['po_date'] = po_date
                 return Response(sap_serializer_data)
             else:
-                server = '10.29.15.169'
-                database = 'Logisticks070224'
+                server = '10.29.15.180'
+                database = 'Logisticks'
                 username = 'sa'
-                password = 'Yokogawa@12345'
+                password = 'LogDB*$@#032024'
                 # Establish connection
                 connection = pyodbc.connect(
                     'DRIVER={SQL Server};SERVER=' + server + ';DATABASE=' + database + ';UID=' + username + ';PWD=' + password)
@@ -274,9 +277,15 @@ class SAPDispatchInstructionViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=['post'], url_path='sap_dil_upload')
     def dil_upload_transaction(self, request, *args, **kwargs):
         try:
-            start_time = time.time()  # Start timing
             file = request.FILES['file']
             df = pd.read_excel(file, sheet_name='Sheet1')
+
+            # Convert date columns to datetime format and handle missing values
+            date_columns = [
+                'Delivery Create Date', 'Tax Invoice Date', 'Billing Create Date', 'DIL Output Date'
+            ]
+            for col in date_columns:
+                df[col] = pd.to_datetime(df[col], errors='coerce').fillna(pd.to_datetime('1900-01-01'))
 
             # Filter DataFrame to keep only required columns
             df = df.rename(columns=column_mapping)
@@ -288,72 +297,76 @@ class SAPDispatchInstructionViewSet(viewsets.ModelViewSet):
             if not missing_columns:
                 objects_to_create = []
                 for index, row in df.iterrows():
-                    obj = SAPDispatchInstruction(
-                        reference_doc=row['Reference Document'],
-                        sold_to_party_no=row['Sold-to Party'],
-                        sold_to_party_name=row['Sold-to Party Name'],
-                        delivery=row['Delivery'],
-                        delivery_create_date=row['Delivery Create Date'],
-                        delivery_item=row['Delivery Item'],
-                        tax_invoice_no=row['Tax Invoice Number (ODN)'],
-                        reference_doc_item=row['Reference Document Item'],
-                        ms_code=row['MS Code'],
-                        sales_quantity=row['Quantity (Sales)'],
-                        linkage_no=row['Linkage Number'],
-                        sales_office=row['Sales Office'],
-                        term_of_payment=row['Terms of Payment'],
-                        tax_invoice_date=row['Tax Invoice Date'],
-
-                        material_discription=row['Material Description'],
-                        plant=row['Plant'],
-                        plant_name=row['Plant Name'],
-                        unit_sales=row['Unit (Sales)'],
-                        billing_number=row['Billing Number'],
-                        billing_create_date=row['Billing Create Date'],
-                        currency_type=row['Currency (Sales)'],
-                        ship_to_party_no=row['Ship-to party'],
-                        ship_to_party_name=row['Ship-to Party Name'],
-                        ship_to_country=row['Ship-to Country'],
-                        ship_to_postal_code=row['Ship-to Postal Code'],
-                        ship_to_city=row['Ship-to City'],
-                        ship_to_street=row['Ship-to Street'],
-                        ship_to_street_for=row['Ship-to Street4'],
-                        insurance_scope=row['Insurance Scope'],
-                        sold_to_country=row['Sold-to Country'],
-                        sold_to_postal_code=row['Sold-to Postal Code'],
-                        sold_to_city=row['Sold-to City'],
-                        sold_to_street=row['Sold-to Street'],
-                        sold_to_street_for=row['Sold-to Street4'],
-                        material_no=row['Material Number'],
-                        hs_code=row['HS Code'],
-                        hs_code_export=row['HS Code Export'],
-                        delivery_quantity=row['Delivery quantity'],
-                        unit_delivery=row['Unit (Delivery)'],
-                        storage_location=row['Storage Location'],
-                        dil_output_date=row['DIL Output Date'],
-                        sales_doc_type=row['Sales Document Type'],
-                        distribution_channel=row['Distribution Channel'],
-                        invoice_item=row['Invoice Item'],
-                        tax_invoice_assessable_value=row['Tax Invoice Assessable Value'],
-                        tax_invoice_total_tax_value=row['Tax Invoice Total Tax Value'],
-                        tax_invoice_total_value=row['Tax Invoice Total Value'],
-                        sales_item_price=row['Item Price (Sales)'],
-                        packing_status=row['Packing status'],
-                        do_item_packed_quantity=row['DO Item Packed Quantity'],
-                        packed_unit_quantity=row['Packed Quantity unit'],
-                        created_by=request.user
-                    )
-                    objects_to_create.append(obj)
+                    try:
+                        row_data = {
+                            'reference_doc': row['Reference Document'],
+                            'sold_to_party_no': row['Sold-to Party'],
+                            'sold_to_party_name': row['Sold-to Party Name'],
+                            'delivery': row['Delivery'],
+                            'delivery_create_date': row['Delivery Create Date'],
+                            'delivery_item': row['Delivery Item'],
+                            'tax_invoice_no': row['Tax Invoice Number (ODN)'],
+                            'reference_doc_item': row['Reference Document Item'],
+                            'ms_code': row['MS Code'],
+                            'sales_quantity': row['Quantity (Sales)'],
+                            'linkage_no': row['Linkage Number'],
+                            'sales_office': row['Sales Office'],
+                            'term_of_payment': row['Terms of Payment'],
+                            'tax_invoice_date': row['Tax Invoice Date'],
+                            'material_discription': row['Material Description'],
+                            'plant': row['Plant'],
+                            'plant_name': row['Plant Name'],
+                            'unit_sales': row['Unit (Sales)'],
+                            'billing_number': row['Billing Number'],
+                            'billing_create_date': row['Billing Create Date'],
+                            'currency_type': row['Currency (Sales)'],
+                            'ship_to_party_no': row['Ship-to party'],
+                            'ship_to_party_name': row['Ship-to Party Name'],
+                            'ship_to_country': row['Ship-to Country'],
+                            'ship_to_postal_code': row['Ship-to Postal Code'],
+                            'ship_to_city': row['Ship-to City'],
+                            'ship_to_street': row['Ship-to Street'],
+                            'ship_to_street_for': row['Ship-to Street4'],
+                            'insurance_scope': row['Insurance Scope'],
+                            'sold_to_country': row['Sold-to Country'],
+                            'sold_to_postal_code': row['Sold-to Postal Code'],
+                            'sold_to_city': row['Sold-to City'],
+                            'sold_to_street': row['Sold-to Street'],
+                            'sold_to_street_for': row['Sold-to Street4'],
+                            'material_no': row['Material Number'],
+                            'hs_code': row['HS Code'],
+                            'hs_code_export': row['HS Code Export'],
+                            'delivery_quantity': row['Delivery quantity'],
+                            'unit_delivery': row['Unit (Delivery)'],
+                            'storage_location': row['Storage Location'],
+                            'dil_output_date': row['DIL Output Date'],
+                            'sales_doc_type': row['Sales Document Type'],
+                            'distribution_channel': row['Distribution Channel'],
+                            'invoice_item': row['Invoice Item'],
+                            'tax_invoice_assessable_value': row['Tax Invoice Assessable Value'],
+                            'tax_invoice_total_tax_value': row['Tax Invoice Total Tax Value'],
+                            'tax_invoice_total_value': row['Tax Invoice Total Value'],
+                            'sales_item_price': row['Item Price (Sales)'],
+                            'packing_status': row['Packing status'],
+                            'do_item_packed_quantity': row['DO Item Packed Quantity'],
+                            'packed_unit_quantity': row['Packed Quantity unit'],
+                            'created_by': request.user
+                        }
+                        obj = SAPDispatchInstruction(**row_data)
+                        objects_to_create.append(obj)
+                    except Exception as row_error:
+                        error_details = {col: row[col] for col in row.index}
+                        return Response(
+                            {'message': f'Error processing row {index + 1}: {row_error}',
+                             'error_details': error_details,
+                             'status': status.HTTP_400_BAD_REQUEST})
 
                 # Bulk create objects
                 with transaction.atomic():
                     SAPDispatchInstruction.objects.bulk_create(objects_to_create)
-                    # Calculate upload time
-                    end_time = time.time()
-                    upload_time = end_time - start_time
+
                 return Response(
                     {'message': 'File uploaded successfully',
-                     'timeComplexity': upload_time,
                      'status': status.HTTP_201_CREATED
                      })
             else:
@@ -361,144 +374,7 @@ class SAPDispatchInstructionViewSet(viewsets.ModelViewSet):
                     {'message': f'File is missing the following required columns: {", ".join(missing_columns)}',
                      'status': status.HTTP_400_BAD_REQUEST})
         except Exception as e:
-            transaction.rollback()
             return Response({'message': str(e), 'status': status.HTTP_400_BAD_REQUEST})
-
-
-class SAPInvoiceDetailsViewSet(viewsets.ModelViewSet):
-    queryset = SAPInvoiceDetails.objects.all()
-    serializer_class = SAPInvoiceDetailsSerializer
-    permission_classes = [permissions.IsAuthenticated]
-
-    def create(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=request.data)
-        if serializer.is_valid(raise_exception=True):
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-    def update(self, request, *args, **kwargs):
-        instance = self.get_object()
-        serializer = self.get_serializer(instance, data=request.data, partial=True)
-        if serializer.is_valid(raise_exception=True):
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_200_OK)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-    def destroy(self, request, *args, **kwargs):
-        instance = self.get_object()
-        instance.is_active = False
-        instance.save()
-        return Response(status=status.HTTP_204_NO_CONTENT)
-
-    @action(detail=False, methods=['post'], url_path='upload_sap_invoice_details')
-    def upload_sap_invoice_details(self, request, *args, **kwargs):
-        try:
-            file = request.FILES['file']
-            # Specify columns to be read as strings
-            dtype_dict = {'Delivery': str,
-                          'Reference Document': str,
-                          'Reference Document Item': str,
-                          'Delivery Item': str,
-                          'Tax Invoice Number (ODN)': str,
-                          'Linkage Number': str,
-                          'Terms of Payment': str,
-                          'Challan No': str,
-                          'Challan Item': str,
-                          'Billing Number': str,
-                          'Currency (Sales)': str
-                          }
-            df = pd.read_excel(file, sheet_name='Sheet1', dtype=dtype_dict)
-            df = df.rename(columns=sap_invoice_columns)
-            required_columns = list(sap_invoice_columns.values())
-            df = df[required_columns]
-
-            # Ensure date columns are parsed correctly
-            date_columns = ['Delivery Create Date', 'Tax Invoice Date', 'Challan Create Date',
-                            'Billing Create Date', 'DIL Output Date']
-            for date_col in date_columns:
-                df[date_col] = pd.to_datetime(df[date_col], errors='coerce')
-
-            # Fill NaN values for numeric fields
-            numeric_columns = ['Tax Invoice Assessable Value', 'Tax Invoice Total Tax Value',
-                               'Tax Invoice Total Value', 'Item Price (Sales)']
-            df[numeric_columns] = df[numeric_columns].fillna(0)
-
-            missing_columns = [col for col in required_columns if col not in df.columns]
-            if not missing_columns:
-                linkage_nos = df['Linkage Number'].unique()
-
-                with transaction.atomic():
-                    # Delete existing records with the same linkage_no
-                    SAPInvoiceDetails.objects.filter(linkage_no__in=linkage_nos).delete()
-
-                    objects_to_create = []
-                    for index, row in df.iterrows():
-                        obj = SAPInvoiceDetails(
-                            reference_doc=row['Reference Document'],
-                            reference_doc_item=row['Reference Document Item'],
-                            delivery=row['Delivery'],
-                            delivery_create_date=row['Delivery Create Date'] if pd.notna(
-                                row['Delivery Create Date']) else None,
-                            delivery_item=row['Delivery Item'],
-                            tax_invoice_no=row['Tax Invoice Number (ODN)'],
-                            tax_invoice_date=row['Tax Invoice Date'] if pd.notna(row['Tax Invoice Date']) else None,
-                            linkage_no=row['Linkage Number'],
-                            term_of_payment=row['Terms of Payment'],
-                            challan_no=row['Challan No'],
-                            challan_create_date=row['Challan Create Date'] if pd.notna(
-                                row['Challan Create Date']) else None,
-                            challan_item=row['Challan Item'],
-                            billing_number=row['Billing Number'],
-                            billing_create_date=row['Billing Create Date'] if pd.notna(
-                                row['Billing Create Date']) else None,
-                            sales_currency=row['Currency (Sales)'],
-                            DIL_output_date=row['DIL Output Date'] if pd.notna(row['DIL Output Date']) else None,
-                            tax_invoice_assessable_value=row['Tax Invoice Assessable Value'],
-                            tax_invoice_total_tax_value=row['Tax Invoice Total Tax Value'],
-                            tax_invoice_total_value=row['Tax Invoice Total Value'],
-                            sales_item_price=float(row['Item Price (Sales)']),
-                            created_by=request.user
-                        )
-                        objects_to_create.append(obj)
-
-                    SAPInvoiceDetails.objects.bulk_create(objects_to_create)
-
-                return Response({'message': 'File uploaded successfully', 'status': status.HTTP_201_CREATED})
-            else:
-                return Response(
-                    {'message': f'File is missing the following required columns: {", ".join(missing_columns)}',
-                     'status': status.HTTP_400_BAD_REQUEST
-                     })
-        except Exception as e:
-            # If any issue occurs, show which columns are missing or causing the error
-            transaction.rollback()
-            return Response({'message': str(e), 'status': status.HTTP_400_BAD_REQUEST})
-
-    @action(detail=False, methods=['post'], url_path='dynamic_filter_sap_invoice_details')
-    def dynamic_filter_sap_invoice_details(self, request, *args, **kwargs):
-        try:
-            data = request.data
-            filter_data = SAPInvoiceDetails.objects.filter(**data)
-            serializer = SAPInvoiceDetailsSerializer(filter_data, many=True)
-            return Response(serializer.data)
-        except Exception as e:
-            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
-
-    @action(detail=False, methods=['post'], url_path='get_sap_invoice_details_amounts')
-    def get_sap_invoice_details_amounts(self, request, *args, **kwargs):
-        try:
-            data = request.data
-            filter_data = SAPInvoiceDetails.objects.filter(**data).values('tax_invoice_no', 'challan_no').annotate(
-                tax_invoice_assessable_value=Sum('tax_invoice_assessable_value'),
-                tax_invoice_total_tax_value=Sum('tax_invoice_total_tax_value'),
-                tax_invoice_total_value=Sum('tax_invoice_total_value'),
-                tax_invoice_date=F('tax_invoice_date'),
-                challan_create_date=F('challan_create_date'),
-            )
-            return Response(filter_data)
-        except Exception as e:
-            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 
 class DispatchBillDetailsViewSet(viewsets.ModelViewSet):
@@ -736,6 +612,7 @@ class MasterItemListViewSet(viewsets.ModelViewSet):
                 linkage_no = item_data.get("linkage_no")
                 quantity = item_data.get("sales_quantity")
                 plant = item_data.get("plant")
+                so_no = item_data.get("reference_doc")
                 storage_location = item_data.get("s_loc")
                 item_no = item_data.get("reference_doc_item")
                 unit_of_measurement = item_data.get("unit_delivery")
@@ -751,6 +628,7 @@ class MasterItemListViewSet(viewsets.ModelViewSet):
                     s_loc=storage_location,
                     material_description=material_description,
                     unit_of_measurement=unit_of_measurement,
+                    so_no=so_no,
                     created_by=request.user
                 )
             return Response({'message': 'Multi Master List created !', 'status': status.HTTP_201_CREATED})
@@ -1329,30 +1207,59 @@ class MultiFileAttachmentViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=['post'], url_path='create_multi_file_attachment')
     def create_multi_file_attachment(self, request, *args, **kwargs):
         try:
-            payload = request.FILES.getlist('file')
-            dil_id = request.data['dil_id']
-            file_type = request.data['file_type']
-            module_name = request.data['module_name']
-            module_id = request.data['module_id']
-            with transaction.atomic():
-                for file in payload:
-                    dil = DispatchInstruction.objects.filter(dil_id=dil_id).first()
-                    file_type = FileType.objects.filter(file_type_id=file_type).first()
-                    if not dil:
-                        transaction.set_rollback(True)
-                        return Response({'message': 'DIL not found', 'status': status.HTTP_204_NO_CONTENT})
-                    if not file_type:
-                        transaction.set_rollback(True)
-                        return Response({'message': 'File type not found', 'status': status.HTTP_204_NO_CONTENT})
-                    # Create multi file attachment
-                    MultiFileAttachment.objects.create(
-                        dil_id=dil,
-                        file=file,
-                        file_type=file_type,
-                        module_name=module_name,
-                        module_id=module_id,
-                    )
+            for key, file in request.FILES.items():
+                MultiFileAttachment.objects.create(
+                    dil_id_id=request.data['da_id'],
+                    module_id=request.data['module_id'],
+                    file=file,
+                    file_type_id=int(key),
+                    module_name=request.data['module_name'],
+                    created_by=request.user,
+                    updated_by=request.user
+                )
                 return Response({'message': 'Multiple File uploaded successfully', 'status': status.HTTP_201_CREATED})
         except Exception as e:
-            transaction.set_rollback(True)
+
             return Response({'message': str(e), 'status': status.HTTP_400_BAD_REQUEST})
+
+    @action(methods=['post'], detail=False, url_path='dispatch_multiple_filter_group_by')
+    def dispatch_multiple_filter_group_by(self, request):
+        data = request.data
+        response = []
+
+        # Query to get distinct file_type_ids for the given dil_id
+        filter_data_filetype = self.get_queryset().filter(dil_id_id=data['dil_id']).values('file_type_id').distinct()
+
+        # Prefetch related FileType objects to minimize queries
+        file_types = FileType.objects.filter(file_type_id__in=[item['file_type_id'] for item in filter_data_filetype])
+
+        # Create a dictionary to map file_type_id to file_type name
+        file_type_map = {ft.file_type_id: ft.file_type for ft in file_types}
+
+        # Group files by file_type_id
+        for filter_data_f in filter_data_filetype:
+            files = defaultdict(list)
+            file_type_id = filter_data_f['file_type_id']
+            # Fetch files for the current file_type_id and dil_id
+            file_results = self.get_queryset().filter(
+                dil_id_id=data['dil_id'],
+                file_type_id=file_type_id
+            ).values('file_type_id', 'file').order_by('file_type_id', 'file')
+
+            for result in file_results:
+                files['file_list'].append(result)
+
+            files['file_type'] = file_type_map.get(file_type_id, '')
+            response.append(files)
+        return Response(response)
+
+    @action(methods=['post'], detail=False, url_path='download_file')
+    def download_file(self, request):
+        media_type = 'multipart/form-data'
+        file_path = os.path.abspath('') + urlparse(request.data['url']).path
+        file_pointer = open(file_path, 'rb')
+        response = HttpResponse(file_pointer.read(), content_type=media_type)
+        filename = os.path.basename(request.data['url'])
+        response['Content-Disposition'] = 'attachment; filename=' + filename
+        response['media_type'] = media_type
+        return response

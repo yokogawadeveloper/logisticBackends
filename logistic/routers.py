@@ -19,7 +19,6 @@ router.register('sub_department', SubDepartmentViewSet, basename='sub_department
 # ----------------------------- DispatchInstruction ------------------------------------------- #
 router.register('dispatch_instruction', DispatchInstructionViewSet, basename='dispatch_instruction')
 router.register('sap_dispatch_instruction', SAPDispatchInstructionViewSet, basename='sap_dispatch_instruction')
-router.register('sap_invoice_details', SAPInvoiceDetailsViewSet, basename='sap_invoice_details')
 router.register('dispatch_bill_details', DispatchBillDetailsViewSet, basename='dispatch_bill_details')
 router.register('master_item_list', MasterItemListViewSet, basename='master_item_list')
 router.register('master_item_batch_list', MasterItemBatchViewSet, basename='master_item_batch_list')
@@ -68,7 +67,6 @@ router.register('truck_request', TruckRequestViewSet, basename='truck_request')
 router.register('truck_list', TruckListViewSet, basename='truck_list')
 router.register('truck_loading_details', TruckLoadingDetailsViewSet, basename='truck_loading_details')
 router.register('delivery_challan', DeliveryChallanViewSet, basename='delivery_challan')
-router.register('invoice_cheque_details', InvoiceChequeDetailsViewSet, basename='invoice_cheque_details')
 
 # ----------------------------- Reports ------------------------------------------- #
 router.register('dispatch_report', DispatchReportViewSet, basename='dispatch_report')

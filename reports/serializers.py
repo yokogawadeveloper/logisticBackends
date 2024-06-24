@@ -1,6 +1,5 @@
 from rest_framework import serializers
 from dispatch.models import *
-from tracking.models import *
 
 
 # Create your serializers here.
@@ -24,10 +23,4 @@ class ExportPDFDispatchSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = DispatchInstruction
-        fields = '__all__'
-
-
-class ExportPDFDeliveryChallanSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = DeliveryChallan
         fields = '__all__'

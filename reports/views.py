@@ -629,16 +629,16 @@ class CustomerConsigneeExport(viewsets.ModelViewSet):
             dispatch = DispatchInstruction.objects.get(dil_id=request.data['dil_id'])
             dispatch_serializer = DispatchInstructionSerializer(dispatch)
 
-            delivery_challan = DeliveryChallan.objects.get(truck_list=request.data['truck_list_id'])
-            delivery_challan_serializer = ExportPDFDeliveryChallanSerializer(delivery_challan)
+            master_list = MasterItemList.objects.filter(dil_id=request.data['dil_id'])
+            item_serializer = MasterItemListSerializer(master_list)
 
-            delivery_challan_invoice = DeliveryChallan.objects.filter(truck_list__id=request.data['truck_list_id']).first()
-            dc_invoice = DCInvoiceDetails.objects.filter(delivery_challan=delivery_challan_invoice)
+            delivery_challan = DeliveryChallan.objects.filter(truck_list__id=request.data['truck_list_id']).first()
+            dc_invoice = DCInvoiceDetails.objects.filter(delivery_challan=delivery_challan)
             dc_invoice_serializer = DCInvoiceDetailsSerializer(dc_invoice, many=True)
 
             context = {
                 'dispatch_data': dispatch_serializer.data,
-                'delivery_challan': delivery_challan_serializer.data,
+                'master_list': item_serializer.data,
                 'dc_invoice_data': dc_invoice_serializer.data
             }
             # Create PDF file

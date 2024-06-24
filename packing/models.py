@@ -57,12 +57,14 @@ class BoxDetails(models.Model):
     loaded_date = models.DateTimeField(null=True)
     delivery_flag = models.BooleanField(default=False)
     panel_flag = models.BooleanField(null=True)
-    box_item_flag = models.BooleanField(null=False)
+    box_item_flag = models.BooleanField(null=False,default=False)
     gross_weight = models.IntegerField(null=True)
     net_weight = models.IntegerField(null=True)
     qa_wetness = models.IntegerField(null=True)
     project_wetness = models.IntegerField(null=True)
     box_price = models.FloatField(default=0.00, null=True, blank=True)
+    box_no_manual = models.CharField(max_length=50, null=True, blank=True)
+
     # Other fields
     created_by = models.ForeignKey(User, related_name='+', null=True, on_delete=models.CASCADE)
     created_at = models.DateTimeField(auto_now_add=True, null=True)
@@ -99,10 +101,11 @@ class ItemPacking(models.Model):
 
 
 class ItemPackingInline(models.Model):
-    item_ref_id = models.ForeignKey(InlineItemList, related_name='inline_list', null=True, on_delete=models.CASCADE)
+    # item_ref_id = models.ForeignKey(InlineItemList, related_name='inline_list', null=True, on_delete=models.CASCADE)
     item_pack_id = models.ForeignKey(ItemPacking, related_name='item_packing_inline', null=True,on_delete=models.CASCADE)
     serial_no = models.CharField(max_length=300, null=True, blank=True)
     tag_no = models.CharField(max_length=300, null=True, blank=True)
+    box_no_manual = models.CharField(max_length=50, null=True, blank=True)
     # Other fields
     created_by = models.ForeignKey(User, related_name='+', null=True, on_delete=models.CASCADE)
     created_at = models.DateTimeField(auto_now_add=True, null=True)
