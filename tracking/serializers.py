@@ -73,3 +73,9 @@ class DeliveryChallanSerializer(serializers.ModelSerializer):
         fields = ('id', 'truck_list', 'e_way_bill_no', 'lrn_no', 'lrn_date', 'no_of_boxes',
                   'created_by', 'created_at', 'updated_by', 'updated_at', 'is_active',
                   'dc_invoice_details')
+
+
+class InvoiceChequeDetailsSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = InvoiceChequeDetails
+        fields = '__all__'

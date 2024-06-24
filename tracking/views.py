@@ -269,14 +269,15 @@ class TruckListViewSet(viewsets.ModelViewSet):
 
             serializer = TruckListSerializer(truck_list, many=True)
             for data in serializer.data:
-                loading_details = TruckLoadingDetails.objects.filter(truck_list_id=data['id'])
-                loading_details_serializer = TruckLoadingDetailsSerializer(loading_details.first(), many=False)
+                dispatch_ids = TruckLoadingDetails.objects.filter(truck_list_id=data['id']).values_list('dil_id',flat=True)
+                dispatch = DispatchInstruction.objects.filter(dil_id__in=dispatch_ids).distinct()
+                dispatch_serializer = DispatchInstructionSerializer(dispatch, many=True)
 
                 delivery_challan = DeliveryChallan.objects.filter(truck_list=data['id'])
                 delivery_challan_serializer = DeliveryChallanSerializer(delivery_challan.first(), many=False)
 
                 data['delivery_challan'] = delivery_challan_serializer.data
-                data['loading_details'] = loading_details_serializer.data
+                data['dispatch'] = dispatch_serializer.data
             return Response(serializer.data, status=status.HTTP_200_OK)
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
@@ -521,24 +522,30 @@ class DeliveryChallanViewSet(viewsets.ModelViewSet):
             truck_loading_details = TruckLoadingDetails.objects.filter(truck_list_id=truck_list_id)
             no_of_boxes = truck_list.first().no_of_boxes if truck_list.exists() else 0
             if truck_list.exists():  # Check if truck_list exists
-                lrn_date = datetime.datetime.strptime(data.get('lrn_date'), "%Y-%m-%dT%H:%M:%S.%fZ").strftime(
-                    "%Y-%m-%d")
+                lrn_date = datetime.datetime.strptime(data.get('lrn_date'), "%Y-%m-%dT%H:%M:%S.%fZ").strftime("%Y-%m-%d")
                 delivery_challan = DeliveryChallan.objects.create(
                     truck_list=truck_list.first(),
                     e_way_bill_no=data.get('e_way_bill_no'),
                     lrn_no=data.get('lrn_no'),
                     lrn_date=lrn_date,  # Assign formatted date
                     remarks=data.get('remarks'),
+                    description_of_goods=data.get('description_of_goods'),
+                    mode_of_delivery=data.get('mode_of_delivery'),
+                    freight_mode=data.get('freight_mode'),
+                    destination=data.get('destination'),
+                    kind_attended=data.get('kind_attended'),
+                    consignee_remakes=data.get('consignee_remakes'),
                     no_of_boxes=no_of_boxes,
                     created_by=request.user,
                     updated_by=request.user
                 )
                 for dc_inv in dc_invoice_details:
-                    bill_date = datetime.datetime.strptime(dc_inv.get('bill_date'), "%Y-%m-%dT%H:%M:%S.%fZ").strftime(
-                        "%Y-%m-%d")
+                    bill_date = datetime.datetime.strptime(dc_inv.get('bill_date'), "%Y-%m-%dT%H:%M:%S.%fZ").strftime("%Y-%m-%d")
+                    dispatch = DispatchInstruction.objects.filter(dil_id=dc_inv.get('dil_id'))
                     DCInvoiceDetails.objects.create(
                         delivery_challan=delivery_challan,
                         truck_list=truck_list.first(),
+                        dil_id=dispatch.first(),
                         bill_no=dc_inv.get('bill_no'),
                         bill_date=bill_date,  # Assign formatted date
                         bill_type=dc_inv.get('bill_type'),
@@ -617,6 +624,46 @@ class DeliveryChallanViewSet(viewsets.ModelViewSet):
                 truck_loading_details = TruckLoadingDetails.objects.filter(truck_list_id=data['truck_list'])
                 truck_loading_details_serializer = TruckLoadingDetailsSerializer(truck_loading_details, many=True)
                 data['loading_details'] = truck_loading_details_serializer.data
+            return Response(serializer.data)
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+class InvoiceChequeDetailsViewSet(viewsets.ModelViewSet):
+    queryset = InvoiceChequeDetails.objects.all()
+    serializer_class = InvoiceChequeDetailsSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        return InvoiceChequeDetails.objects.filter(is_active=True)
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save(created_by=request.user, updated_by=request.user)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def update(self, request, *args, **kwargs):
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=request.data)
+        if serializer.is_valid():
+            serializer.save(updated_by=request.user)
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
+        instance.is_active = False
+        instance.save()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+    @action(methods=['post'], detail=False, url_path='dynamic_filter_invoice_cheque_details')
+    def dynamic_filter_invoice_cheque_details(self, request):
+        try:
+            data = request.data
+            invoice_cheque_details = InvoiceChequeDetails.objects.filter(**data)
+            serializer = InvoiceChequeDetailsSerializer(invoice_cheque_details, many=True)
             return Response(serializer.data)
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
