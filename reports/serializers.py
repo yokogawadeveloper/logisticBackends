@@ -1,5 +1,4 @@
-from rest_framework import serializers
-from dispatch.models import *
+from packing.serializers import *
 
 
 # Create your serializers here.
@@ -24,3 +23,20 @@ class ExportPDFDispatchSerializer(serializers.ModelSerializer):
     class Meta:
         model = DispatchInstruction
         fields = '__all__'
+
+
+class ItemPackingReportSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ItemPacking
+        fields = '__all__'
+        depth = 1
+
+
+class ItemPackingInlineReportSerializer(serializers.ModelSerializer):
+    dispatch = DispatchInstructionSerializer(read_only=True)
+    box_details = BoxDetailSerializer(read_only=True)
+
+    class Meta:
+        model = ItemPackingInline
+        fields = '__all__'
+        read_only_fields = ('created_by', 'updated_by')

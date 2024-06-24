@@ -71,7 +71,7 @@ class BoxDetailsReportViewSet(viewsets.ModelViewSet):
             date_flag = request.data['date_flag']
             date_from = request.data['date_from']
             date_to = request.data['date_to']
-            main_box= request.data['main_box']
+            main_box = request.data['main_box']
             # Combine filters for DispatchInstruction
             dispatch_filters = {**filter_data}
             if date_flag and date_type != 'box_created_date':
@@ -79,7 +79,8 @@ class BoxDetailsReportViewSet(viewsets.ModelViewSet):
             dispatch = DispatchInstruction.objects.filter(**dispatch_filters)
             # Get the box details
             if date_flag and date_type == 'box_created_date':
-                box_details = BoxDetails.objects.filter(dil_id__in=dispatch).filter(created_at__range=[date_from, date_to], main_box=main_box)
+                box_details = BoxDetails.objects.filter(dil_id__in=dispatch).filter(
+                    created_at__range=[date_from, date_to], main_box=main_box)
             else:
                 box_details = BoxDetails.objects.filter(dil_id__in=dispatch, main_box=main_box)
             # Serialize the data
@@ -658,5 +659,67 @@ class CustomerConsigneeExport(viewsets.ModelViewSet):
                     file.write(response.getvalue())
                 return response
             return HttpResponse("Error rendering PDF", status=400)
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+# create report part views here.
+class ItemPackingReportViewSet(viewsets.ModelViewSet):
+    queryset = ItemPacking.objects.all()
+    serializer_class = ItemPackingSerializer
+
+    @action(methods=['post'], detail=False, url_path='item_packing_report')
+    def item_packing_report(self, request, *args, **kwargs):
+        try:
+            data = request.data
+            dil_flag = data.get('dil_flag', False)
+            box_flag = data.get('box_flag', False)
+            inline_flag = data.get('inline_flag', False)
+
+            dil_filter = data.get('dil_filter', {})
+            box_filter = data.get('box_filter', {})
+            inline_filter = data.get('inline_filter', {})
+
+            dispatch_ids = []
+            box_codes = []
+            inline_query = ItemPackingInline.objects.none()
+            box_serializer = None  # Initialize to None
+            dispatch_serializer = None  # Initialize to None
+            item_packing_serializer = None
+
+            if dil_flag:
+                dispatch = DispatchInstruction.objects.filter(**dil_filter)
+                dispatch_serializer = DispatchInstructionSerializer(dispatch, many=True)
+                dispatch_ids = [d['dil_id'] for d in dispatch_serializer.data]
+
+            if box_flag:
+                box_query = BoxDetails.objects.filter(**box_filter)
+                if dispatch_ids:
+                    box_query = box_query.filter(dil_id__in=dispatch_ids)
+                box_serializer = BoxDetailSerializer(box_query, many=True)
+                box_codes = [b['box_code'] for b in box_serializer.data]
+
+            if inline_flag:
+                inline_query = ItemPackingInline.objects.filter(**inline_filter)
+
+            if box_codes:
+                item_packing = ItemPacking.objects.filter(box_code__in=box_codes)
+                item_packing_serializer = ItemPackingReportSerializer(item_packing, many=True)
+                item_packing_ids = item_packing.values_list('item_packing_id', flat=True)
+                inline_query = inline_query.filter(item_pack_id__in=item_packing_ids)
+
+            # Final response for packing inline
+            serializer = ItemPackingInlineReportSerializer(inline_query, many=True)
+            result = []
+            # Binding the box details and dispatch data
+            for response in serializer.data:
+                if box_serializer:  # Only add box details if box_serializer is defined
+                    response['box_details'] = box_serializer.data
+                if dispatch_serializer:
+                    response['dispatch'] = dispatch_serializer.data
+                if item_packing_serializer:
+                    response['item_packing'] = item_packing_serializer.data
+                result.append(response)
+            return Response(result, status=status.HTTP_200_OK)
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
