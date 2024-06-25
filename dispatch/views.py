@@ -20,6 +20,7 @@ from urllib.parse import urlparse
 import os
 from collections import defaultdict
 
+
 # Create your views here.
 class DispatchInstructionViewSet(viewsets.ModelViewSet):
     queryset = DispatchInstruction.objects.all()
@@ -802,6 +803,33 @@ class MasterItemBatchViewSet(viewsets.ModelViewSet):
             return Response(serializer.data)
         except Exception as e:
             return Response({'message': str(e), 'status': status.HTTP_400_BAD_REQUEST})
+
+    @action(detail=False, methods=['post'], url_path='master_list_with_so_no')
+    def master_list_with_so_no(self, request, *args, **kwargs):
+        try:
+            dil_id = request.data['dil_id']
+            master_items = MasterItemList.objects.filter(dil_id=dil_id)
+            master_serializer = TestMasterItemListSerializer(master_items, many=True)
+            response_data = []
+            for master_item in master_serializer.data:
+                if master_item['inline_items']:
+                    for inline_item in master_item['inline_items']:
+                        response_data.append({
+                            'item_no': master_item['item_no'],
+                            'master_quantity': master_item['quantity'],
+                            'inline_serial_no': inline_item['serial_no'],
+                            'inline_quantity': inline_item['quantity']
+                        })
+                else:
+                    response_data.append({
+                        'item_no': master_item['item_no'],
+                        'master_quantity': master_item['quantity'],
+                        'inline_serial_no': None,
+                        'inline_quantity': None
+                    })
+            return Response(response_data, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 
 class InlineItemListViewSet(viewsets.ModelViewSet):

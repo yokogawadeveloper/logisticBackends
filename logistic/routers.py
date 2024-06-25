@@ -68,6 +68,7 @@ router.register('truck_list', TruckListViewSet, basename='truck_list')
 router.register('truck_loading_details', TruckLoadingDetailsViewSet, basename='truck_loading_details')
 router.register('delivery_challan', DeliveryChallanViewSet, basename='delivery_challan')
 router.register('invoice_cheque_details',InvoiceChequeDetailsViewSet,basename='invoice_cheque_details')
+router.register('truck_dil_mapped',TruckDIlMappingViewSet,basename='truck_dil_mapped')
 
 # ----------------------------- Reports ------------------------------------------- #
 router.register('dispatch_report', DispatchReportViewSet, basename='dispatch_report')

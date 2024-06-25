@@ -90,6 +90,21 @@ class InlineItemListSerializer(serializers.ModelSerializer):
         read_only_fields = ['created_by', 'created_at', 'updated_by', 'updated_at', 'is_active']
 
 
+# for new
+class TestInlineItemListSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = InlineItemList
+        fields = ['serial_no', 'quantity']
+
+
+class TestMasterItemListSerializer(serializers.ModelSerializer):
+    inline_items = TestInlineItemListSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = MasterItemList
+        fields = ['item_no', 'quantity', 'inline_items']
+
+
 class MasterItemBatchSerializer(serializers.ModelSerializer):
     inline_items = InlineItemListSerializer(many=True)
 

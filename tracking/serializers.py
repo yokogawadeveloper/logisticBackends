@@ -45,6 +45,12 @@ class TruckListSerializer(serializers.ModelSerializer):
             self.fields.pop('check_out_by')
 
 
+class TruckDIlMappingSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = TruckDilMappingDetails
+        fields = '__all__'
+
+
 class TruckLoadingDetailsSerializer(serializers.ModelSerializer):
     created_by = serializers.HiddenField(default=serializers.CurrentUserDefault())
     updated_by = serializers.HiddenField(default=serializers.CurrentUserDefault())
@@ -71,8 +77,10 @@ class DeliveryChallanSerializer(serializers.ModelSerializer):
     class Meta:
         model = DeliveryChallan
         fields = ('id', 'truck_list', 'e_way_bill_no', 'lrn_no', 'lrn_date', 'no_of_boxes',
-                  'created_by', 'created_at', 'updated_by', 'updated_at', 'is_active',
-                  'dc_invoice_details')
+                  'description_of_goods','mode_of_delivery','freight_mode','destination',
+                  'kind_attended','consignee_remakes','remarks','created_by', 'created_at',
+                  'updated_by', 'updated_at', 'is_active','dc_invoice_details'
+                  )
 
 
 class InvoiceChequeDetailsSerializer(serializers.ModelSerializer):
