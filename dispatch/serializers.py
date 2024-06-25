@@ -112,10 +112,16 @@ class MasterItemBatchSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = MasterItemList
-        fields = ('item_id', 'dil_id', 'material_description', 'material_no', 'ms_code',
-                  's_loc', 'bin', 'plant', 'linkage_no', 'group', 'quantity', 'serial_no', 'packed_quantity',
-                  'match_no', 'tag_no', 'range', 'item_status', 'item_status_no', 'inline_items'
-                  )
+        fields = (
+            'item_id', 'dil_id', 'item_no', 'so_no', 'material_description', 'material_no',
+            'ms_code', 's_loc', 'bin', 'plant', 'linkage_no', 'group', 'quantity',
+            'country_of_origin', 'serial_no', 'match_no', 'tag_no', 'range',
+            'customer_po_sl_no', 'customer_po_item_code', 'packed_quantity',
+            'revision_flag', 'revision_count', 'verified_by', 'verified_at',
+            'verified_flag', 'packed_by', 'packed_at','packing_flag','custom_po_flag',
+            'serial_no_qty','serial_flag','warranty_flag','warranty_date','status',
+            'status_no', 'inline_items'
+        )
 
 
 class DAUserRequestAllocationSerializer(serializers.ModelSerializer):

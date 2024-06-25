@@ -804,8 +804,8 @@ class MasterItemBatchViewSet(viewsets.ModelViewSet):
         except Exception as e:
             return Response({'message': str(e), 'status': status.HTTP_400_BAD_REQUEST})
 
-    @action(detail=False, methods=['post'], url_path='master_list_with_so_no')
-    def master_list_with_so_no(self, request, *args, **kwargs):
+    @action(detail=False, methods=['post'], url_path='master_list_with_inline_dil')
+    def master_list_with_inline_dil(self, request, *args, **kwargs):
         try:
             dil_id = request.data['dil_id']
             master_items = MasterItemList.objects.filter(dil_id=dil_id)

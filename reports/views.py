@@ -706,7 +706,10 @@ class ItemPackingReportViewSet(viewsets.ModelViewSet):
                 item_packing = ItemPacking.objects.filter(box_code__in=box_codes)
                 item_packing_serializer = ItemPackingReportSerializer(item_packing, many=True)
                 item_packing_ids = item_packing.values_list('item_packing_id', flat=True)
-                inline_query = inline_query.filter(item_pack_id__in=item_packing_ids)
+                if inline_flag:
+                    inline_query = inline_query.filter(item_pack_id__in=item_packing_ids)
+                else:
+                    inline_query = ItemPackingInline.objects.filter(item_pack_id__in=item_packing_ids)
 
             # Final response for packing inline
             serializer = ItemPackingInlineReportSerializer(inline_query, many=True)

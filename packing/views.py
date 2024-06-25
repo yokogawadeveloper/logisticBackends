@@ -209,16 +209,13 @@ class BoxDetailViewSet(viewsets.ModelViewSet):
             new_box_details = BoxDetails.objects.filter(box_code=data['box_code'], box_item_flag=True).values_list('box_code', flat=True)
             new_item_packing_data = ItemPacking.objects.filter(box_code__in=new_box_details)
             new_item_packing_serializer = ItemPackingSerializer(new_item_packing_data, many=True, context={'request': request})
-
-            item_list = []
             for box in box_serializer_data:
+                item_list = []
                 for item in item_serializer_data:
                     if box['box_code'] == item['box_code']:
                         item_list.append(item)
                 box['item_list'] = item_list
-
-            return Response({'box_data': box_serializer_data, 'new_item_packing': new_item_packing_serializer.data},
-                            status=status.HTTP_200_OK)
+            return Response({'box_data': box_serializer_data, 'new_item_packing': new_item_packing_serializer.data},status=status.HTTP_200_OK)
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
