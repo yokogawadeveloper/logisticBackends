@@ -814,19 +814,15 @@ class MasterItemBatchViewSet(viewsets.ModelViewSet):
             for master_item in master_serializer.data:
                 if master_item['inline_items']:
                     for inline_item in master_item['inline_items']:
-                        response_data.append({
-                            'item_no': master_item['item_no'],
-                            'master_quantity': master_item['quantity'],
-                            'inline_serial_no': inline_item['serial_no'],
-                            'inline_quantity': inline_item['quantity']
-                        })
+                        inline_data = master_item
+                        inline_data['inline_serial_no'] = inline_item['serial_no']
+                        inline_data['inline_tag_no'] = inline_item['tag_no']
+                        response_data.append(inline_data)
                 else:
-                    response_data.append({
-                        'item_no': master_item['item_no'],
-                        'master_quantity': master_item['quantity'],
-                        'inline_serial_no': None,
-                        'inline_quantity': None
-                    })
+                    inline_data = master_item
+                    inline_data['inline_serial_no'] = None
+                    inline_data['inline_tag_no'] = None
+                    response_data.append(inline_data)
             return Response(response_data, status=status.HTTP_200_OK)
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)

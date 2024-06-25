@@ -94,7 +94,7 @@ class InlineItemListSerializer(serializers.ModelSerializer):
 class TestInlineItemListSerializer(serializers.ModelSerializer):
     class Meta:
         model = InlineItemList
-        fields = ['serial_no', 'quantity']
+        fields = ['serial_no', 'quantity','tag_no']
 
 
 class TestMasterItemListSerializer(serializers.ModelSerializer):
@@ -102,7 +102,9 @@ class TestMasterItemListSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = MasterItemList
-        fields = ['item_no', 'quantity', 'inline_items']
+        fields = ['item_id', 'dil_id', 'material_description', 'material_no', 'ms_code','item_no',
+                  's_loc', 'bin', 'plant', 'linkage_no', 'group', 'quantity', 'serial_no', 'packed_quantity',
+                  'match_no', 'tag_no', 'range', 'item_status', 'item_status_no', 'inline_items']
 
 
 class MasterItemBatchSerializer(serializers.ModelSerializer):

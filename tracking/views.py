@@ -325,7 +325,7 @@ class TruckListViewSet(viewsets.ModelViewSet):
             truck_list = TruckList.objects.filter(id=truck_list_id)
             if truck_list.exists():
                 truck_list.update(
-                    check_out=data['check_out'],
+                    check_out=datetime.datetime.now(),
                     check_out_remarks=data['check_out_remarks'],
                     check_out_by=request.user
                 )
