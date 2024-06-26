@@ -683,14 +683,10 @@ class ItemPackingReportViewSet(viewsets.ModelViewSet):
             dispatch_ids = []
             box_codes = []
             inline_query = ItemPackingInline.objects.none()
-            box_serializer = None  # Initialize to None
             dispatch_serializer = None  # Initialize to None
-            item_packing_serializer = None
 
             if dil_flag:
-                dispatch = DispatchInstruction.objects.filter(**dil_filter)
-                dispatch_serializer = DispatchInstructionSerializer(dispatch, many=True)
-                dispatch_ids = [d['dil_id'] for d in dispatch_serializer.data]
+                dispatch_ids = DispatchInstruction.objects.filter(**dil_filter).values_list('dil_id', flat=True)
 
             if box_flag:
                 box_query = BoxDetails.objects.filter(**box_filter)
@@ -704,7 +700,6 @@ class ItemPackingReportViewSet(viewsets.ModelViewSet):
 
             if box_codes:
                 item_packing = ItemPacking.objects.filter(box_code__in=box_codes)
-                item_packing_serializer = ItemPackingReportSerializer(item_packing, many=True)
                 item_packing_ids = item_packing.values_list('item_packing_id', flat=True)
                 if inline_flag:
                     inline_query = inline_query.filter(item_pack_id__in=item_packing_ids)
@@ -716,12 +711,11 @@ class ItemPackingReportViewSet(viewsets.ModelViewSet):
             result = []
             # Binding the box details and dispatch data
             for response in serializer.data:
-                if box_serializer:  # Only add box details if box_serializer is defined
-                    response['box_details'] = box_serializer.data
-                if dispatch_serializer:
-                    response['dispatch'] = dispatch_serializer.data
-                if item_packing_serializer:
-                    response['item_packing'] = item_packing_serializer.data
+                if response['box_details']:
+                    first_box_detail = response['box_details'][0]
+                    dispatch = DispatchInstruction.objects.get(dil_id=first_box_detail['dil_id'])
+                    dispatch_serializer = DispatchInstructionSerializer(dispatch)
+                response['dispatch'] = dispatch_serializer.data
                 result.append(response)
             return Response(result, status=status.HTTP_200_OK)
         except Exception as e:
