@@ -692,8 +692,7 @@ class ItemPackingReportViewSet(viewsets.ModelViewSet):
                 box_query = BoxDetails.objects.filter(**box_filter)
                 if dispatch_ids:
                     box_query = box_query.filter(dil_id__in=dispatch_ids)
-                box_serializer = BoxDetailSerializer(box_query, many=True)
-                box_codes = [b['box_code'] for b in box_serializer.data]
+                box_codes = box_query.values_list('box_code', flat=True)
 
             if inline_flag:
                 inline_query = ItemPackingInline.objects.filter(**inline_filter)
