@@ -48,6 +48,7 @@ class BoxDetailSerializer(serializers.ModelSerializer):
         fields = '__all__'
         read_only_fields = ('created_by', 'updated_by')
         depth = 1
+
     #
     # def __init__(self, *args, **kwargs):
     #     depth = kwargs.get('context', {}).get('depth', 0)
@@ -97,3 +98,9 @@ class ItemPackingSerializer(serializers.ModelSerializer):
     def update(self, instance, validated_data):
         validated_data['updated_by'] = self.context['request'].user
         return super(ItemPackingSerializer, self).update(instance=instance, validated_data=validated_data)
+
+
+class DispatchInstructionDocumentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = DispatchInstruction
+        fields = '__all__'

@@ -9,6 +9,7 @@ from subordinate.labels import *
 from workflow.views import *
 from tracking.views import *
 from reports.views import *
+from reports.doucuments import *
 
 # Add routers here.
 
@@ -76,3 +77,4 @@ router.register('box_details_report', BoxDetailsReportViewSet, basename='box_det
 router.register('packing_list_pdf_export', PackingListPDFExport, basename='packing_list_pdf_export')
 router.register('customer_consignee_export', CustomerConsigneeExport, basename='customer_consignee_export')
 router.register('item_packing_report', ItemPackingReportViewSet, basename='item_packing_report')
+router.register('customer_details_pdf', CustomerDocumentsDetailsViewSet, basename='customer_details_pdf')

@@ -34,6 +34,8 @@ class DispatchInstruction(models.Model):
     specific_transport_instruction = models.CharField(max_length=100, null=True, blank=True)
     di_attached = models.CharField(max_length=100, null=True, blank=True)
     customer_contact_details = models.TextField(null=True, blank=True)
+    customer_name = models.CharField(max_length=100, null=True, blank=True)
+    customer_number = models.CharField(max_length=100, null=True, blank=True)
     partial_shipment = models.CharField(max_length=100, null=True, blank=True)
     if_partial_billable = models.CharField(max_length=100, null=True, blank=True)
     any_other_special_instruction = models.TextField(null=True, blank=True)
