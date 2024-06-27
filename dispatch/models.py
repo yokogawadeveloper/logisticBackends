@@ -11,7 +11,7 @@ class DispatchInstruction(models.Model):
     dil_no = models.CharField(max_length=20, null=True, blank=True)
     dil_date = models.DateField(auto_now=False, auto_now_add=True)
     so_no = models.CharField(max_length=20, null=True, blank=True)
-    po_no = models.CharField(max_length=20, null=True, blank=True)
+    po_no = models.CharField(max_length=50, null=True, blank=True)
     po_date = models.CharField(max_length=20, null=True, blank=True)
     bill_to = models.CharField(max_length=100, null=True, blank=True)
     warranty = models.CharField(max_length=100, null=True, blank=True)
@@ -20,7 +20,6 @@ class DispatchInstruction(models.Model):
     current_level = models.IntegerField(null=True, blank=True, default=0)
     dil_level = models.IntegerField(null=True, blank=True, default=0)
     manual_tcs_gc = models.CharField(max_length=100, null=True, blank=True)
-
     # other related fields
     insurance_scope = models.ForeignKey(InsuranceScope, on_delete=models.CASCADE, null=True, blank=True)
     freight_basis = models.ForeignKey(FreightBasis, on_delete=models.CASCADE, null=True, blank=True)

@@ -196,7 +196,8 @@ class BoxDetailViewSet(viewsets.ModelViewSet):
     def box_details_code_filter(self, request, *args, **kwargs):
         try:
             data = request.data
-            filter_data = BoxDetails.objects.filter(parent_box=data['box_code'], main_box=False).values_list('box_code',flat=True)
+            filter_data = BoxDetails.objects.filter(parent_box=data['box_code'], main_box=False).values_list('box_code',
+                                                                                                             flat=True)
             box_data = BoxDetails.objects.filter(box_code__in=filter_data)
             item_packing_data = ItemPacking.objects.filter(box_code__in=filter_data)
             # serializer for box details
@@ -206,16 +207,19 @@ class BoxDetailViewSet(viewsets.ModelViewSet):
             item_packing_serializer = ItemPackingSerializer(item_packing_data, many=True, context={'request': request})
             item_serializer_data = item_packing_serializer.data
             # for box details if box_item_flag
-            new_box_details = BoxDetails.objects.filter(box_code=data['box_code'], box_item_flag=True).values_list('box_code', flat=True)
+            new_box_details = BoxDetails.objects.filter(box_code=data['box_code'], box_item_flag=True).values_list(
+                'box_code', flat=True)
             new_item_packing_data = ItemPacking.objects.filter(box_code__in=new_box_details)
-            new_item_packing_serializer = ItemPackingSerializer(new_item_packing_data, many=True, context={'request': request})
+            new_item_packing_serializer = ItemPackingSerializer(new_item_packing_data, many=True,
+                                                                context={'request': request})
             for box in box_serializer_data:
                 item_list = []
                 for item in item_serializer_data:
                     if box['box_code'] == item['box_code']:
                         item_list.append(item)
                 box['item_list'] = item_list
-            return Response({'box_data': box_serializer_data, 'new_item_packing': new_item_packing_serializer.data},status=status.HTTP_200_OK)
+            return Response({'box_data': box_serializer_data, 'new_item_packing': new_item_packing_serializer.data},
+                            status=status.HTTP_200_OK)
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -311,7 +315,7 @@ class ItemPackingViewSet(viewsets.ModelViewSet):
 
                             update_list.append(model_obj)
                         # update the BoxDetails
-                        BoxDetails.objects.bulk_update(update_list, ['parent_box', 'status','box_no_manual'])
+                        BoxDetails.objects.bulk_update(update_list, ['parent_box', 'status', 'box_no_manual'])
 
                 else:
                     parent_box = None
@@ -349,9 +353,6 @@ class ItemPackingViewSet(viewsets.ModelViewSet):
                     net_weight=data['net_weight'],
                     qa_wetness=data['qa_wetness'],
                     project_wetness=data['project_wetness'],
-
-
-
                     box_price=price,
                     created_by=request.user
                 )
@@ -370,17 +371,19 @@ class ItemPackingViewSet(viewsets.ModelViewSet):
                         created_by_id=request.user.id,
                     )
                     for inline_items in obj['inline_items']:
-
                         serial_no = inline_items['serial_no']
                         tag_no = inline_items['tag_no']
                         box_no_manual = inline_items['box_count_no']
+                        inline_item_list_id = inline_items['inline_item_id']
                         ItemPackingInline.objects.create(
                             box_no_manual=box_no_manual,
+                            inline_item_list_id=inline_item_list_id,
                             item_pack_id=item_packing,
                             serial_no=serial_no,
                             tag_no=tag_no,
                             created_by_id=request.user.id
                         )
+                        InlineItemList.objects.filter(inline_item_id=inline_item_list_id).update(packed_flag=True)
                 # creating MasterItemList
                 update_list = []
                 for obj in data['item_list']:
@@ -441,5 +444,144 @@ class ItemPackingViewSet(viewsets.ModelViewSet):
                 dispatch = DispatchInstruction.objects.filter(dil_id=request_data['dil_id'])
                 dispatch.update(dil_status="packing in processed successfully", dil_status_no=10)
                 return Response({'message': 'Item Packing Progressed'}, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+    @action(methods=['post'], detail=False, url_path='delete_on_box_code')
+    def delete_on_box_code(self, request, *args, **kwargs):
+        try:
+            with transaction.atomic():
+                data = request.data
+                box_code = data['box_code']
+                main_bax = data['main_box']
+                # Ensure BoxDetails exists
+                if main_bax:
+                    box_code_list = BoxDetails.objects.filter(parent_box=box_code).values_list('box_code', flat=True)
+                    box_detail_dil = BoxDetails.objects.filter(parent_box=box_code).first()
+                else:
+                    box_code_list = BoxDetails.objects.filter(box_code=box_code).values_list('box_code', flat=True)
+                    box_detail_dil = BoxDetails.objects.filter(box_code=box_code).first()
+                # Get related dil_id
+                dil_id = box_detail_dil.dil_id_id
+                # Delete related ItemPackingInline records
+                item_packing_ids = ItemPacking.objects.filter(box_code__in=box_code_list).values_list('item_packing_id',
+                                                                                                      flat=True)
+                item_packing_inline = ItemPackingInline.objects.filter(item_pack_id__in=item_packing_ids)
+                inline_item_list_ids = item_packing_inline.values_list('inline_item_list_id', flat=True)
+                InlineItemList.objects.filter(inline_item_id__in=inline_item_list_ids).update(packed_flag=False)
+                item_packing_inline.delete()
+                # Delete ItemPacking records
+                ItemPacking.objects.filter(item_packing_id__in=item_packing_ids).delete()
+                # Delete BoxDetails records
+                BoxDetails.objects.filter(box_code__in=box_code_list).delete()
+                # Update MasterItemList and DispatchInstruction statuses
+                update_list = []
+                for item_packing_id in item_packing_ids:
+                    item_packing = ItemPacking.objects.get(item_packing_id=item_packing_id)
+                    item_obj = MasterItemList.objects.get(item_id=item_packing.item_ref_id_id)
+                    item_obj.packed_quantity = max(item_obj.packed_quantity - item_packing.item_qty, 0)
+                    # update
+                    item_obj.status = "not_packed"
+                    item_obj.packing_flag = 2
+                    item_obj.status_no = 4
+                    update_list.append(item_obj)
+                MasterItemList.objects.bulk_update(update_list,
+                                                   ['packed_quantity', 'status', 'packing_flag', 'status_no'])
+                # Update dispatch status
+                DispatchInstruction.objects.filter(dil_id=dil_id).update(
+                    dil_status="Packing In Progress",
+                    dil_status_no=10, packed_flag=False
+                )
+                return Response({'success': 'Box details successfully deleted'}, status=status.HTTP_200_OK)
+        except Exception as e:
+            transaction.rollback()
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+    @action(methods=['post'], detail=False, url_path='delete_on_item_packing')
+    def delete_on_item_packing(self, request, *args, **kwargs):
+        try:
+            with transaction.atomic():
+                data = request.data
+                item_packing_id = data['item_packing_id']
+                # Delete related ItemPackingInline records
+                item_packing_inline = ItemPackingInline.objects.filter(item_packing_id=item_packing_id)
+                inline_item_list_ids = item_packing_inline.values_list('inline_item_list_id', flat=True)
+                InlineItemList.objects.filter(inline_item_id__in=inline_item_list_ids).update(packed_flag=False)
+                item_packing_inline.delete()
+                # Delete ItemPacking records
+                item_packing = ItemPacking.objects.filter(item_packing_id=item_packing_id)
+                if item_packing.exists():
+                    item_packing_obj = item_packing.first()
+                    if item_packing_obj.quantity > 1:
+                        item_packing.update(quantity=F('quantity') - 1)
+                    else:
+                        box_list = item_packing.values_list('box_code', flat=True)
+                        if box_list.count() > 1:
+                            BoxDetails.objects.filter(box_code__in=box_list).delete()
+                        item_packing.delete()
+
+                # Update MasterItemList and DispatchInstruction statuses
+                update_list = []
+                item_packing_obj = ItemPacking.objects.filter(item_packing_id=item_packing_id).first()
+                if item_packing_obj:
+                    item_obj = MasterItemList.objects.get(item_id=item_packing_obj.item_ref_id_id)
+                    dil_id = item_obj.dil_id
+                    item_obj.packed_quantity = max(item_obj.packed_quantity - 1, 0)
+                    item_obj.status = "not_packed"
+                    item_obj.packing_flag = 2
+                    item_obj.status_no = 4
+                    update_list.append(item_obj)
+                    MasterItemList.objects.bulk_update(update_list,['packed_quantity', 'status', 'packing_flag', 'status_no'])
+                    # Update dispatch status
+                    DispatchInstruction.objects.filter(dil_id=dil_id).update(
+                        dil_status="Packing In Progress",
+                        dil_status_no=10, packed_flag=False
+                    )
+                return Response({'success': 'packing details successfully deleted'}, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+    @action(methods=['post'], detail=False, url_path='delete_on_item_packing_inline')
+    def delete_on_item_packing_inline(self, request, *args, **kwargs):
+        try:
+            with transaction.atomic():
+                data = request.data
+                item_packing_inline_id = data['item_packing_inline_id']
+                # Delete related ItemPackingInline records
+                item_packing_inline = ItemPackingInline.objects.filter(id=item_packing_inline_id)
+                item_pack_id = item_packing_inline.values_list('item_packing_id', flat=True)
+                inline_item_list_ids = item_packing_inline.values_list('inline_item_list_id', flat=True)
+                InlineItemList.objects.filter(inline_item_id__in=inline_item_list_ids).update(packed_flag=False)
+                item_packing_inline.delete()
+                # Delete ItemPacking records
+                item_packing = ItemPacking.objects.filter(item_packing_id__in=item_pack_id)
+                if item_packing.exists():
+                    item_packing_obj = item_packing.first()
+                    if item_packing_obj.quantity > 1:
+                        item_packing.update(quantity=F('quantity') - 1)
+                    else:
+                        box_list = item_packing.values_list('box_code', flat=True)
+                        if box_list.count() > 1:
+                            BoxDetails.objects.filter(box_code__in=box_list).delete()
+                        item_packing.delete()
+
+                # Update MasterItemList and DispatchInstruction statuses
+                update_list = []
+                item_packing_obj = ItemPacking.objects.filter(item_packing_id__in=item_pack_id).first()
+                if item_packing_obj:
+                    item_obj = MasterItemList.objects.get(item_id=item_packing_obj.item_ref_id_id)
+                    dil_id = item_obj.dil_id
+                    item_obj.packed_quantity = max(item_obj.packed_quantity - 1, 0)
+                    item_obj.status = "not_packed"
+                    item_obj.packing_flag = 2
+                    item_obj.status_no = 4
+                    update_list.append(item_obj)
+                    MasterItemList.objects.bulk_update(update_list,['packed_quantity', 'status', 'packing_flag', 'status_no'])
+                    # Update dispatch status
+                    DispatchInstruction.objects.filter(dil_id=dil_id).update(
+                        dil_status="Packing In Progress",
+                        dil_status_no=10, packed_flag=False
+                    )
+                return Response({'success': 'packing details successfully deleted'}, status=status.HTTP_200_OK)
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)

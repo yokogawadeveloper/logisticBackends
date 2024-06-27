@@ -687,12 +687,15 @@ class ItemPackingReportViewSet(viewsets.ModelViewSet):
 
             if dil_flag:
                 dispatch_ids = DispatchInstruction.objects.filter(**dil_filter).values_list('dil_id', flat=True)
+            only_dispatch_box_query = BoxDetails.objects.filter(dil_id__in=dispatch_ids)
 
             if box_flag:
                 box_query = BoxDetails.objects.filter(**box_filter)
                 if dispatch_ids:
                     box_query = box_query.filter(dil_id__in=dispatch_ids)
                 box_codes = box_query.values_list('box_code', flat=True)
+            else:
+                box_codes = only_dispatch_box_query.values_list('box_code', flat=True)
 
             if inline_flag:
                 inline_query = ItemPackingInline.objects.filter(**inline_filter)
