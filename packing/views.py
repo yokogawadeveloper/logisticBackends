@@ -196,8 +196,7 @@ class BoxDetailViewSet(viewsets.ModelViewSet):
     def box_details_code_filter(self, request, *args, **kwargs):
         try:
             data = request.data
-            filter_data = BoxDetails.objects.filter(parent_box=data['box_code'], main_box=False).values_list('box_code',
-                                                                                                             flat=True)
+            filter_data = BoxDetails.objects.filter(parent_box=data['box_code'], main_box=False).values_list('box_code',flat=True)
             box_data = BoxDetails.objects.filter(box_code__in=filter_data)
             item_packing_data = ItemPacking.objects.filter(box_code__in=filter_data)
             # serializer for box details
@@ -238,8 +237,7 @@ class BoxDetailViewSet(viewsets.ModelViewSet):
     def box_details_for_loading(self, request, *args, **kwargs):
         try:
             data = request.data
-            filter_data = self.get_queryset().filter(dil_id=data['dil_id'], main_box=True, loaded_flag=False,
-                                                     status='packed')
+            filter_data = self.get_queryset().filter(dil_id=data['dil_id'], main_box=True, loaded_flag=False,status='packed')
             serializer = BoxDetailSerializer(filter_data, many=True, context={'request': request})
             serialize_data = serializer.data
             return Response({'data': serialize_data})

@@ -668,8 +668,8 @@ class ItemPackingReportViewSet(viewsets.ModelViewSet):
     queryset = ItemPacking.objects.all()
     serializer_class = ItemPackingSerializer
 
-    @action(methods=['post'], detail=False, url_path='item_packing_report')
-    def item_packing_report(self, request, *args, **kwargs):
+    @action(methods=['post'], detail=False, url_path='item_packing_report_serial_no_wise')
+    def item_packing_report_serial_no_wise(self, request, *args, **kwargs):
         try:
             data = request.data
             dil_flag = data.get('dil_flag', False)
