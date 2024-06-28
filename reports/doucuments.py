@@ -1,16 +1,17 @@
-from rest_framework import status, permissions, viewsets
-from rest_framework.response import Response
-from rest_framework.decorators import action
-from django.template.loader import get_template
-from django.http import HttpResponse
-from django.conf import settings
-from dispatch.models import *
-from dispatch.serializers import *
-from packing.models import *
-from packing.serializers import *
-from xhtml2pdf import pisa
-from io import BytesIO
 import os
+from io import BytesIO
+from django.conf import settings
+from django.http import HttpResponse
+from django.template.loader import get_template
+from rest_framework import status, permissions, viewsets
+from rest_framework.decorators import action
+from rest_framework.response import Response
+from xhtml2pdf import pisa
+import  pandas as pd
+import openpyxl
+
+from dispatch.serializers import MasterItemListSerializer
+from packing.serializers import *
 
 
 # Create Documents logic here.
@@ -30,23 +31,23 @@ class CustomerDocumentsDetailsViewSet(viewsets.ModelViewSet):
             box = BoxSize.objects.get(box_size_id=box_size)
             response_data = {
                 'dil_id': dispatch.dil_id,
-                'ship_to_party_name':dispatch.ship_to_party_name,
-                'ship_to_address':dispatch.ship_to_address,
-                'ship_to_city':dispatch.ship_to_city,
-                'ship_to_postal_code':dispatch.ship_to_postal_code,
-                'ship_to_country':dispatch.ship_to_country,
+                'ship_to_party_name': dispatch.ship_to_party_name,
+                'ship_to_address': dispatch.ship_to_address,
+                'ship_to_city': dispatch.ship_to_city,
+                'ship_to_postal_code': dispatch.ship_to_postal_code,
+                'ship_to_country': dispatch.ship_to_country,
                 'dil_no': dispatch.dil_no,
                 'dil_date': dispatch.dil_date,
                 'so_no': dispatch.so_no,
                 'po_no': dispatch.po_no,
                 'po_date': dispatch.po_date,
-                'customer_name':dispatch.customer_name,
-                'customer_number':dispatch.customer_number,
-                'package_id':box_details.box_code,
-                'barcode':box_details.box_code,
-                'net_weight':box_details.net_weight,
-                'gr_weight':box_details.qa_wetness,
-                'box_size':box.box_size
+                'customer_name': dispatch.customer_name,
+                'customer_number': dispatch.customer_number,
+                'package_id': box_details.box_code,
+                'barcode': box_details.box_code,
+                'net_weight': box_details.net_weight,
+                'gr_weight': box_details.qa_wetness,
+                'box_size': box.box_size
             }
             html_template = get_template('customer_details.html')
             html = html_template.render({'response_data': response_data})
@@ -63,5 +64,17 @@ class CustomerDocumentsDetailsViewSet(viewsets.ModelViewSet):
                 with open(file_path, "wb") as file:
                     file.write(response.getvalue())
                 return response
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+    @action(methods=['POST'], detail=False, url_path='qtm_report')
+    def qtm_report(self, request, pk=None):
+        try:
+            df = pd.DataFrame({
+                'Column1': [None],  # Placeholder for the 1st column
+                'Column2': ['Text for Column 2'],
+                'Column3': ['Text for Column 3']
+            })
+            df.to_excel('example.xlsx', index=False)
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
