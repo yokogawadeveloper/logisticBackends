@@ -525,6 +525,54 @@ class TruckLoadingDetailsViewSet(viewsets.ModelViewSet):
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
+    @action(methods=['post'], detail=False, url_path='remove_loading_details_on_truck_list')
+    def remove_loading_details_on_truck_list(self, request):
+        try:
+            data = request.data
+            dil_id = data['dil_id']
+            box_code = data['box_code']
+            truck_list_id = data['truck_list_id']
+
+            # Create Loading Details
+            truck_loading_details_obj = {
+                'dil_id': dil_id,
+                'truck_list_id': truck_list_id,
+                'box_code': box_code
+            }
+
+            # Remove Truck Loading Details
+            loading = TruckLoadingDetails.objects.filter(**truck_loading_details_obj)
+            loading.delete()
+
+            # Update Box Details
+            box_details = BoxDetails.objects.filter(box_code=box_code)
+            if box_details.exists():
+                box_details.update(loaded_flag=False)
+
+            # Update Truck List status & Dispatch status
+            truck_list_in_loading = TruckLoadingDetails.objects.filter(truck_list_id=truck_list_id).exists()
+            if not truck_list_in_loading:
+                TruckList.objects.filter(id=truck_list_id).update(
+                    loaded_flag=False,
+                    tracking_status=1,
+                    status='Not Loaded',
+                    no_of_boxes=0
+                )
+
+            DispatchInstruction.objects.filter(dil_id=dil_id).update(
+                dil_status_no=13,
+                dil_status='Loading In Progress',
+                loaded_flag=False,
+            )
+
+            return Response({'message': 'Deletion done successfully'}, status=status.HTTP_200_OK)
+
+        except KeyError as e:
+            return Response({'error': f'Missing key: {str(e)}'}, status=status.HTTP_400_BAD_REQUEST)
+
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
 
 class DeliveryChallanViewSet(viewsets.ModelViewSet):
     queryset = DeliveryChallan.objects.all()

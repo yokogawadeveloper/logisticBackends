@@ -189,6 +189,16 @@ class DispatchInstructionViewSet(viewsets.ModelViewSet):
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
+    @action(methods=['post'], detail=False, url_path='dispatch_on_created_by')
+    def dispatch_on_created_by(self, request):
+        try:
+            user = request.user
+            dispatch = DispatchInstruction.objects.filter(created_by=user)
+            serializer = DispatchInstructionSerializer(dispatch, many=True)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
 
 class SAPDispatchInstructionViewSet(viewsets.ModelViewSet):
     queryset = DispatchInstruction.objects.all()
@@ -920,6 +930,7 @@ class DAUserRequestAllocationViewSet(viewsets.ModelViewSet):
             data = request.data
             current_user_id = request.user.id
             col_name = data['col_name']
+            col_value = data['col_value']
             # get the da_ids based on the user id
             dil_ids = DAUserRequestAllocation.objects.filter(
                 emp_id_id=current_user_id,
@@ -931,15 +942,14 @@ class DAUserRequestAllocationViewSet(viewsets.ModelViewSet):
             if data['status'] == "all":
                 filter_data = DispatchInstruction.objects.filter(
                     dil_id__in=list(dil_ids),
-                    **{col_name: data['col_value']}
+                    **{col_name: col_value}
                 )
             else:
                 filter_data = DispatchInstruction.objects.filter(
                     dil_id__in=list(dil_ids),
-                    **{col_name: data['col_value']},
+                    **{col_name: col_value},
                     status=data['status']
                 )
-
             # serialize the data
             serializer = DispatchInstructionSerializer(filter_data, many=True, context={'request': request})
             serializer_data = serializer.data
